@@ -23,7 +23,8 @@ public class WebSecurityConfig {
     http
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(authz -> authz
-            .requestMatchers("/register_request", "/register_form", "/login_form", "/login_request")
+            .requestMatchers("/register_request", "/register_form", "/login_form", "/login_request",
+                "/logout_request")
             .permitAll()
             .anyRequest().authenticated()
         )

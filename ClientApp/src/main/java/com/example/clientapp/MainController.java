@@ -12,6 +12,7 @@ import org.springframework.boot.Banner.Mode;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -67,6 +68,16 @@ public class MainController {
     return "register_form";
   }
 
+  /**
+   * Send login request
+   *
+   * @param email
+   * @param password
+   * @param model
+   * @param response
+   * @return
+   */
+
   @PostMapping("/login_request")
   public String loginRequest(String email, String password, Model model,
       HttpServletResponse response) {
@@ -74,8 +85,6 @@ public class MainController {
       boolean success = authService.validateIdentity(email, password).get();
       if (success) {
         // generate JWT token and store into the cookies
-
-        //Store the token cookies & some user info
         String token = jwtUtil.generateToken(email.toLowerCase());
         Cookie tokenCookie = new Cookie("token", token);
         Cookie emailCookie = new Cookie("email", email.toLowerCase());
@@ -101,6 +110,17 @@ public class MainController {
     }
   }
 
+
+  /**
+   * Send register request
+   *
+   * @param email
+   * @param password
+   * @param name
+   * @param model
+   * @return
+   */
+
   @PostMapping("/register_request")
   public String registerRequest(String email, String password, String name, Model model) {
     try {
@@ -119,6 +139,31 @@ public class MainController {
   }
 
 
+  /**
+   * Reset the cookies
+   * @param response
+   * @return
+   */
+  @PostMapping("/logout_request")
+  public String logoutRequest(HttpServletResponse response) {
+    //
+    Cookie tokenCookie = new Cookie("token", null);
+    tokenCookie.setHttpOnly(true);
+    tokenCookie.setPath("/");
+    tokenCookie.setMaxAge(0);
+
+    Cookie emailCookie = new Cookie("email", null);
+    emailCookie.setHttpOnly(true);
+    emailCookie.setPath("/");
+    emailCookie.setMaxAge(0);
+
+    // Add cookies to the response to delete them in the client
+    response.addCookie(tokenCookie);
+    response.addCookie(emailCookie);
+
+
+    return "redirect:/login_form";
+  }
 
 
 }
