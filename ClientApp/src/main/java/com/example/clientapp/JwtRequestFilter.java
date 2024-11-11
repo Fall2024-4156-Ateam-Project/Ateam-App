@@ -30,16 +30,19 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
     // skip some paths
     String requestPath = request.getRequestURI();
+    System.out.println("Incoming request: " + requestPath);
     if (requestPath.equals("/register_request") || requestPath.equals("/register_form") ||
-        requestPath.equals("/login_form") || requestPath.equals("/login_request")) {
+        requestPath.equals("/login_form") || requestPath.equals("/login_request") || requestPath.equals("/")) {
       chain.doFilter(request, response);
       return;
     }
 
+    System.out.println("Filter incoming request: " + requestPath);
+
     String token = util.getCookie("token", request);
 
     if (token == null || !jwtUtil.validateToken(token, jwtUtil.extractEmailFromToken(token))) {
-      response.sendRedirect("/login_form");
+      response.sendRedirect("/");
       return;
     }
     if (SecurityContextHolder.getContext().getAuthentication() == null) {

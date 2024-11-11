@@ -130,15 +130,7 @@ public class AuthService {
     // This one should be atomic
     // call backend api and firebase to create user
     CompletableFuture<Boolean> future = new CompletableFuture<>();
-
-    UserService userService = new UserService();
-    Pair<String, Boolean> response = userService.registerUser(email, name);
-    System.out.println(
-        "response   " + response.msg() + " status " + response.status());
-    if (!response.status()) {
-      future.complete(false);
-      return future;
-    }
+    //Save to firebase
     String emailClean = email.toLowerCase();
     String hashedEmail = util.hashEmail(emailClean);
     isUserExist(hashedEmail).thenAccept(
@@ -165,6 +157,10 @@ public class AuthService {
       future.complete(false);
       return null;
     });
+
+
+
+
     return future;
   }
 

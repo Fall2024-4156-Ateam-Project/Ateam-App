@@ -1,8 +1,10 @@
 package com.example.clientapp;
 
 
+import com.example.clientapp.apiService.UserService;
 import com.example.clientapp.user.AuthService;
 import com.example.clientapp.util.JwtUtil;
+import com.example.clientapp.util.Pair;
 import com.example.clientapp.util.Util;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,21 +25,28 @@ public class MainController {
 
   private final AuthService authService;
 
-
+  private final UserService userService;
   private final JwtUtil jwtUtil;
 
   private final Util util;
 
   @Autowired
-  public MainController(AuthService authService, JwtUtil jwtUtil, Util util) {
+  public MainController(AuthService authService, JwtUtil jwtUtil, Util util,
+      UserService userService) {
     this.authService = authService;
     this.jwtUtil = jwtUtil;
     this.util = util;
+    this.userService = userService;
   }
 
   @GetMapping(value = "/")
-  public String index() {
-    return "redirect:/home";
+  public String index(Model model, HttpServletRequest request) {
+    String email = null;
+    email = util.getCookie("email", request);
+    if (email != null) {
+      return "redirect:/home";
+    }
+    return "index";
   }
 
   @GetMapping(value = "/home")
@@ -125,6 +134,17 @@ public class MainController {
   public String registerRequest(String email, String password, String name, Model model) {
     try {
       boolean success = authService.saveNewUser(name, email, password).get();
+      int tryT = 3;
+      while (tryT > 0) {
+        Pair<String, Boolean> response = userService.registerUser(email, name);
+        System.out.println(
+            "response   " + response.msg() + " status " + response.status() + "Try times " + tryT);
+        if (response.status()) {
+          break;
+        }
+
+        tryT--;
+      }
 
       if (success) {
         return "login_form";
@@ -141,6 +161,7 @@ public class MainController {
 
   /**
    * Reset the cookies
+   *
    * @param response
    * @return
    */
@@ -161,8 +182,7 @@ public class MainController {
     response.addCookie(tokenCookie);
     response.addCookie(emailCookie);
 
-
-    return "redirect:/login_form";
+    return "redirect:/";
   }
 
 
