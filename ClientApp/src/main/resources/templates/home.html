@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home Page</title>
+  <style>
+    /* Basic styling for the home page */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f4f4f9;
+    }
+
+    .home-container {
+      text-align: center;
+      padding: 2rem;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      max-width: 400px;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .email {
+      font-weight: bold;
+      color: #4CAF50;
+    }
+
+    .button {
+      margin-top: 1.5rem;
+      padding: 0.7rem 1.5rem;
+      background-color: #4CAF50;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+
+    .button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+
+<div class="home-container">
+  <h1>Welcome to Your Dashboard</h1>
+  <p>Welcome back, <span class="email" th:text="${email}">[User Email]</span>!</p>
+  <p>We're glad to see you again.</p>
+
+  <!-- Example logout button -->
+  <a href="/logout" class="button">Logout</a>
+</div>
+
+</body>
+</html>

@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+
+##credential
+coms4156-app-*.json
+##config file
