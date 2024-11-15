@@ -2,6 +2,7 @@ package com.example.clientapp.user;
 
 
 import com.example.clientapp.apiService.UserService;
+import com.example.clientapp.util.CommonTypes;
 import com.example.clientapp.util.Pair;
 import com.example.clientapp.util.Util;
 import com.google.api.core.ApiFuture;
@@ -98,11 +99,24 @@ public class AuthService {
    * @param password
    */
   public CompletableFuture<Void> saveUser(String name, String hashedEmail, String password,
-      String email) {
+      String email, CommonTypes.Role role) {
+
+    // Validate role
+    if (role != CommonTypes.Role.doctor && role != CommonTypes.Role.patient) {
+      return CompletableFuture.failedFuture(new IllegalArgumentException("Invalid role: " + role));
+    }
     // Hash the password before saving
     String hashedPassword = passwordEncoder.encode(password);
     System.out.println("raw saveUser   " + hashedPassword);
-    User user = new User(email, hashedPassword, name);
+    User user;
+
+    if (role == CommonTypes.Role.doctor) {
+        // Create a Doctor if role is doctor
+        user = new Doctor(email, hashedPassword, name, role);
+    } else {
+        // Create a Patient if role is patient
+        user = new Patient(email, hashedPassword, name, role);
+    }
 
     CompletableFuture<Void> future = new CompletableFuture<>();
 
@@ -126,7 +140,7 @@ public class AuthService {
    * @param email
    * @param password
    */
-  public CompletableFuture<Boolean> saveNewUser(String name, String email, String password) {
+  public CompletableFuture<Boolean> saveNewUser(String name, String email, String password, CommonTypes.Role role) {
     // This one should be atomic
     // call backend api and firebase to create user
     CompletableFuture<Boolean> future = new CompletableFuture<>();
@@ -139,7 +153,7 @@ public class AuthService {
             System.out.println("Cannot store the new user");
             future.complete(false);
           } else {
-            saveUser(name, hashedEmail, password, emailClean).thenAccept(
+            saveUser(name, hashedEmail, password, emailClean, role).thenAccept(
                     aVoid -> {
                       System.out.println("Saved!");
                       future.complete(true);

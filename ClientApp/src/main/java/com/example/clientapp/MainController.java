@@ -3,6 +3,7 @@ package com.example.clientapp;
 
 import com.example.clientapp.apiService.UserService;
 import com.example.clientapp.user.AuthService;
+import com.example.clientapp.util.CommonTypes;
 import com.example.clientapp.util.JwtUtil;
 import com.example.clientapp.util.Pair;
 import com.example.clientapp.util.Util;
@@ -131,9 +132,9 @@ public class MainController {
    */
 
   @PostMapping("/register_request")
-  public String registerRequest(String email, String password, String name, Model model) {
+  public String registerRequest(String email, String password, String name, CommonTypes.Role role, Model model) {
     try {
-      boolean success = authService.saveNewUser(name, email, password).get();
+      boolean success = authService.saveNewUser(name, email, password, role).get();
       int tryT = 3;
       while (tryT > 0) {
         Pair<String, Boolean> response = userService.registerUser(email, name);
