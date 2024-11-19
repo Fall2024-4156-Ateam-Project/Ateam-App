@@ -7,11 +7,19 @@ import com.example.clientapp.util.Pair;
 import com.example.clientapp.util.Util;
 import com.google.api.core.ApiFuture;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -197,6 +205,311 @@ public class AuthService {
     );
     return future;
   }
+
+  // Method to get all doctors' information
+  public List<Doctor> getAllDoctors() {
+    List<Doctor> doctors = new ArrayList<>();
+
+    Query query = databaseReference.orderByChild("role").equalTo("doctor");
+
+    query.addListenerForSingleValueEvent(new ValueEventListener() {
+        @Override
+        public void onDataChange(DataSnapshot dataSnapshot) {
+          for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+            Doctor doctor = snapshot.getValue(Doctor.class);
+            if (doctor != null) {
+              doctors.add(doctor);
+            }
+          }
+        }
+
+        @Override
+        public void onCancelled(DatabaseError databaseError) {
+          System.err.println("Error fetching data: " + databaseError.getMessage());
+          throw new RuntimeException("Database query cancelled: " + databaseError.getMessage());
+        }
+    });
+
+    return doctors;
+  }
+
+  // Search users by name
+  public CompletableFuture<List<User>> searchUsersByName(String name) {
+    CompletableFuture<List<User>> future = new CompletableFuture<>();
+
+    // Query to search doctors by name
+    Query query = databaseReference.orderByChild("name");
+
+    query.addValueEventListener(new ValueEventListener() {
+        @Override
+        public void onDataChange(DataSnapshot dataSnapshot) {
+            List<User> users = new ArrayList<>();
+
+            // Iterate over all users in the database
+            for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+              User user = snapshot.getValue(User.class);
+              if (user != null) {
+                  // Check if the user's name contains the search term (case insensitive)
+                  if (user.getName().toLowerCase().contains(name.toLowerCase())) {
+                      users.add(user);  // Add user to the result list if the name contains the substring
+                  }
+              }
+          }
+
+            future.complete(users);  // Complete the future with the result
+        }
+
+        @Override
+        public void onCancelled(DatabaseError databaseError) {
+            future.completeExceptionally(databaseError.toException());  // Handle error
+        }
+    });
+
+    return future;  // Return the CompletableFuture to handle asynchronously
+}
+
+public CompletableFuture<List<Doctor>> searchDoctorsByPartialSpecialty(String specialtySubstring) {
+  CompletableFuture<List<Doctor>> future = new CompletableFuture<>();
+
+  // Normalize the search term to lowercase for case-insensitive comparison
+  String searchTerm = specialtySubstring.toLowerCase();
+
+  // Create a query to find doctors whose specialty contains the search term
+  databaseReference.orderByChild("specialty").addValueEventListener(new ValueEventListener() {
+      @Override
+      public void onDataChange(DataSnapshot dataSnapshot) {
+          List<Doctor> doctors = new ArrayList<>();
+
+          // Iterate over all doctors in the database
+          for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+              Doctor doctor = snapshot.getValue(Doctor.class);
+
+              // Check if the doctor's specialty contains the search term
+              if (doctor != null && doctor.getSpecialty().toLowerCase().contains(searchTerm)) {
+                  doctors.add(doctor);  // Add doctor to the result list if it matches
+              }
+          }
+
+          // Complete the future with the list of matching doctors
+          future.complete(doctors);
+      }
+
+      @Override
+      public void onCancelled(DatabaseError databaseError) {
+          future.completeExceptionally(databaseError.toException());  // Handle error
+      }
+  });
+
+  return future;
+}
+
+
+public CompletableFuture<Boolean> updateUserByEmail(String email, Map<String, Object> fieldsToUpdate) {
+  String hashedEmail = util.hashEmail(email.toLowerCase());  // Hash the email to retrieve the user reference
+
+  // Return a CompletableFuture to handle async operation
+  CompletableFuture<Boolean> future = new CompletableFuture<>();
+
+  // Call the helper function to get the user data
+  getUser(hashedEmail).thenAccept(dataSnapshot -> {
+      if (dataSnapshot.exists()) {
+          User user = dataSnapshot.getValue(User.class);  // Retrieve the user object
+          CommonTypes.Role role = user != null ? user.getRole() : null;
+
+          if (role == null) {
+              System.out.println("Role not found in user data.");
+              future.complete(false);
+              return;
+          }
+
+          // Create a map to hold the updated fields
+          Map<String, Object> updates = new HashMap<>();
+
+          // Iterate through fieldsToUpdate and add them to the updates map
+          if (fieldsToUpdate.containsKey("gender")) {
+              updates.put("gender", fieldsToUpdate.get("gender"));
+          }
+          if (fieldsToUpdate.containsKey("dateOfBirth")) {
+              String dateOfBirthDateStr = (String) fieldsToUpdate.get("dateOfBirth");
+              LocalDate dateOfBirth = LocalDate.parse(dateOfBirthDateStr);
+              updates.put("dateOfBirth", dateOfBirth.toString());  // Store as string
+          }
+
+          // Handle updates depending on the user's role
+          if (role == CommonTypes.Role.doctor) {
+              // Update doctor-specific fields
+              if (fieldsToUpdate.containsKey("specialty")) {
+                  updates.put("specialty", fieldsToUpdate.get("specialty"));
+              }
+              if (fieldsToUpdate.containsKey("qualifications")) {
+                  updates.put("qualifications", fieldsToUpdate.get("qualifications"));
+              }
+              if (fieldsToUpdate.containsKey("medicalLicenseNumber")) {
+                  updates.put("medicalLicenseNumber", fieldsToUpdate.get("medicalLicenseNumber"));
+              }
+              if (fieldsToUpdate.containsKey("licenseExpirationDate")) {
+                  String licenseExpirationDateStr = (String) fieldsToUpdate.get("licenseExpirationDate");
+                  LocalDate licenseExpirationDate = LocalDate.parse(licenseExpirationDateStr);
+                  updates.put("licenseExpirationDate", licenseExpirationDate.toString());
+              }
+              if (fieldsToUpdate.containsKey("officeLocation")) {
+                  updates.put("officeLocation", fieldsToUpdate.get("officeLocation"));
+              }
+          } else if (role == CommonTypes.Role.patient) {
+              // Update patient-specific fields
+              if (fieldsToUpdate.containsKey("medicalHistory")) {
+                  updates.put("medicalHistory", fieldsToUpdate.get("medicalHistory"));
+              }
+              if (fieldsToUpdate.containsKey("allergies")) {
+                  updates.put("allergies", fieldsToUpdate.get("allergies"));
+              }
+              if (fieldsToUpdate.containsKey("bloodType")) {
+                  updates.put("bloodType", fieldsToUpdate.get("bloodType"));
+              }
+              if (fieldsToUpdate.containsKey("emergencyContact")) {
+                  updates.put("emergencyContact", fieldsToUpdate.get("emergencyContact"));
+              }
+              if (fieldsToUpdate.containsKey("insuranceDetails")) {
+                  updates.put("insuranceDetails", fieldsToUpdate.get("insuranceDetails"));
+              }
+              if (fieldsToUpdate.containsKey("address")) {
+                  updates.put("address", fieldsToUpdate.get("address"));
+              }
+          } else {
+              System.out.println("Invalid role detected: " + role);
+              future.complete(false);
+              return;
+          }
+
+          // Apply the updates to Firebase
+          DatabaseReference usersRef = databaseReference.child(hashedEmail);
+          usersRef.updateChildren(updates, (databaseError, databaseReference) -> {
+            if (databaseError != null) {
+                System.out.println("Error updating user: " + databaseError.getMessage());
+                future.complete(false);  // Complete the future with failure
+            } else {
+                System.out.println("User updated successfully");
+                future.complete(true);  // Complete the future with success
+            }
+          });
+
+
+      } else {
+          System.out.println("User not found in the database.");
+          future.complete(false);
+      }
+  }).exceptionally(ex -> {
+      System.out.println("Error retrieving user data: " + ex.getMessage());
+      future.complete(false);
+      return null;
+  });
+
+  return future;
+}
+
+
+
+
+  // public CompletableFuture<Boolean> updateUserByemail(String email, Map<String, Object> fieldsToUpdate) {
+        
+  //       String hashedEmail = util.hashEmail(email.toLowerCase());
+
+  //       // Return a CompletableFuture to handle async operation
+  //       return CompletableFuture.supplyAsync(() -> {
+  //           try {
+  //               // Retrieve the current user data to get the role and other fields
+  //               //get user data by hashedemail
+  //               DatabaseReference usersRef = databaseReference.child(hashedEmail);
+  //               if (usersRef == null) {
+  //                   System.out.println("User not found.");
+  //                   return false;
+  //               }
+
+  //               // Get the role from the user data
+  //               //DataSnapshot user = getUser(hashedEmail).get();
+  //               User user =  getUser(hashedEmail).get().getValue(User.class);
+
+  //               CommonTypes.Role role = (CommonTypes.Role) user.getRole();
+
+  //               if (role == null) {
+  //                   System.out.println("Role not found in user data.");
+  //                   return false;
+  //               }
+
+  //               // Create a map to hold the updated fields
+  //               Map<String, Object> updates = new HashMap<>();
+  //               if (fieldsToUpdate.containsKey("gender")) {
+  //                 updates.put("gender", fieldsToUpdate.get("gender"));
+  //               }
+  //               if (fieldsToUpdate.containsKey("dateOfBirth")) {
+  //                 // Assuming in a specific format (e.g., "yyyy-MM-dd")
+  //                 String dateOfBirthDateStr = (String) fieldsToUpdate.get("dateOfBirth");
+  //                 LocalDate dateOfBirth = LocalDate.parse(dateOfBirthDateStr); // Convert to LocalDate
+  //                 updates.put("licenseExpirationDate", dateOfBirth.toString()); // Store as string
+  //             }
+
+  //               // Depending on the role, update only the appropriate fields
+  //               if (role == CommonTypes.Role.doctor) {
+  //                   // Dynamically update the fields based on input
+  //                   if (fieldsToUpdate.containsKey("specialty")) {
+  //                       updates.put("specialty", fieldsToUpdate.get("specialty"));
+  //                   }
+  //                   if (fieldsToUpdate.containsKey("qualifications")) {
+  //                       updates.put("qualifications", fieldsToUpdate.get("qualifications"));
+  //                   }
+  //                   if (fieldsToUpdate.containsKey("medicalLicenseNumber")) {
+  //                       updates.put("medicalLicenseNumber", fieldsToUpdate.get("medicalLicenseNumber"));
+  //                   }
+  //                   if (fieldsToUpdate.containsKey("licenseExpirationDate")) {
+  //                       // Assuming "licenseExpirationDate" is a string in a specific format (e.g., "yyyy-MM-dd")
+  //                       String licenseExpirationDateStr = (String) fieldsToUpdate.get("licenseExpirationDate");
+  //                       LocalDate licenseExpirationDate = LocalDate.parse(licenseExpirationDateStr); // Convert to LocalDate
+  //                       updates.put("licenseExpirationDate", licenseExpirationDate.toString()); // Store as string
+  //                   }
+  //                   if (fieldsToUpdate.containsKey("officeLocation")) {
+  //                       updates.put("officeLocation", fieldsToUpdate.get("officeLocation"));
+  //                   }
+
+  //                   usersRef.updateChildrenAsync(updates);
+
+  //               } else if (role == CommonTypes.Role.patient) {
+
+  //                   // Dynamically update the fields based on input
+  //                   if (fieldsToUpdate.containsKey("medicalHistory")) {
+  //                       updates.put("medicalHistory", fieldsToUpdate.get("medicalHistory"));
+  //                   }
+  //                   if (fieldsToUpdate.containsKey("allergies")) {
+  //                       updates.put("allergies", fieldsToUpdate.get("allergies"));
+  //                   }
+  //                   if (fieldsToUpdate.containsKey("bloodType")) {
+  //                       updates.put("bloodType", fieldsToUpdate.get("bloodType"));
+  //                   }
+  //                   if (fieldsToUpdate.containsKey("emergencyContact")) {
+  //                       updates.put("emergencyContact", fieldsToUpdate.get("emergencyContact"));
+  //                   }
+  //                   if (fieldsToUpdate.containsKey("insuranceDetails")) {
+  //                     updates.put("insuranceDetails", fieldsToUpdate.get("insuranceDetails"));
+  //                   }
+  //                   if (fieldsToUpdate.containsKey("address")) {
+  //                     updates.put("address", fieldsToUpdate.get("address"));
+  //                   }
+
+  //                   usersRef.updateChildrenAsync(updates);
+                   
+  //               } else {
+  //                   System.out.println("Invalid role detected: " + role);
+  //                   return false;
+  //               }
+
+  //               System.out.println("User updated successfully");
+  //               return true;
+
+  //           } catch (Exception e) {
+  //               e.printStackTrace();
+  //               return false;
+  //           }
+  //       });
+  //   }
 
 
 }

@@ -3,6 +3,9 @@ package com.example.clientapp;
 
 import com.example.clientapp.apiService.UserService;
 import com.example.clientapp.user.AuthService;
+import com.example.clientapp.user.AuthService.DataCallback;
+import com.example.clientapp.user.Doctor;
+import com.example.clientapp.user.User;
 import com.example.clientapp.util.CommonTypes;
 import com.example.clientapp.util.JwtUtil;
 import com.example.clientapp.util.Pair;
@@ -10,6 +13,12 @@ import com.example.clientapp.util.Util;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.context.annotation.Bean;
@@ -18,8 +27,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.WebUtils;
 
 @Controller
 public class MainController {
@@ -185,6 +199,60 @@ public class MainController {
 
     return "redirect:/";
   }
+
+  
+  @PutMapping("/update_request")
+  public CompletableFuture<String> updateUserRequest(HttpServletRequest request, HttpServletResponse response, @RequestBody Map<String, Object> fieldsToUpdate) {
+    String email = util.getCookie("email", request);
+    if (email == null || email.isEmpty()) {
+      return CompletableFuture.completedFuture("Email is required and must be present in the cookies.");
+    }
+    return authService.updateUserByEmail(email, fieldsToUpdate)
+            .thenApply(success -> {
+                if (success) {
+                  Cookie cookie = new Cookie("email", email);
+                  cookie.setPath("/"); 
+                  cookie.setHttpOnly(true); 
+                  
+                  // Add the cookie to the response
+                  response.addCookie(cookie);
+                  return "User update successful.";
+                } else {
+                    return "User update failed.";
+                }
+            })
+            .exceptionally(ex -> {
+                // Handle any unexpected exceptions
+                return "Error updating user: " + ex.getMessage();
+            });
+  }
+
+  @GetMapping("/all_doctors")
+  @ResponseBody
+  public List<Doctor> getAllDoctors() {
+    final List<Doctor> doctors = new ArrayList<>();
+    
+    authService.getAllDoctors(new DataCallback() {
+        @Override
+        public void onDataFetched(List<Doctor> fetchedDoctors) {
+            doctors.addAll(fetchedDoctors);  // Store fetched doctors in the list
+        }
+    });
+
+    return doctors;
+  }
+
+  @GetMapping("/search/name")
+  public CompletableFuture<List<User>> searchUsersByName(@RequestParam String name) {
+      return authService.searchUsersByName(name);
+  }
+
+  // Endpoint to search doctors by partial specialty
+  @GetMapping("/search/specialty")
+  public CompletableFuture<List<Doctor>> searchDoctorsByPartialSpecialty(@RequestParam String specialty) {        
+    return authService.searchDoctorsByPartialSpecialty(specialty);
+  }
+
 
 
 }
