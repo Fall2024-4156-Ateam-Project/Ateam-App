@@ -3,12 +3,20 @@ package com.example.clientapp;
 
 import com.example.clientapp.apiService.UserService;
 import com.example.clientapp.user.AuthService;
+import com.example.clientapp.user.Doctor;
+import com.example.clientapp.user.User;
+import com.example.clientapp.util.CommonTypes;
 import com.example.clientapp.util.JwtUtil;
 import com.example.clientapp.util.Pair;
 import com.example.clientapp.util.Util;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.context.annotation.Bean;
@@ -17,8 +25,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.WebUtils;
 
 @Controller
 public class MainController {
@@ -131,9 +144,9 @@ public class MainController {
    */
 
   @PostMapping("/register_request")
-  public String registerRequest(String email, String password, String name, Model model) {
+  public String registerRequest(String email, String password, String name, CommonTypes.Role role, Model model) {
     try {
-      boolean success = authService.saveNewUser(name, email, password).get();
+      boolean success = authService.saveNewUser(name, email, password, role).get();
       int tryT = 3;
       while (tryT > 0) {
         Pair<String, Boolean> response = userService.registerUser(email, name);
@@ -184,6 +197,54 @@ public class MainController {
 
     return "redirect:/";
   }
+
+  
+  @PutMapping("/update_request")
+  @ResponseBody
+  public CompletableFuture<String> updateUserRequest(HttpServletRequest request, HttpServletResponse response, @RequestBody Map<String, Object> fieldsToUpdate) {
+    String email = util.getCookie("email", request);
+    if (email == null || email.isEmpty()) {
+      return CompletableFuture.completedFuture("Email is required and must be present in the cookies.");
+    }
+    return authService.updateUserByEmail(email, fieldsToUpdate)
+            .thenApply(success -> {
+                if (success) {
+                  Cookie cookie = new Cookie("email", email);
+                  cookie.setPath("/"); 
+                  cookie.setHttpOnly(true); 
+                  
+                  // Add the cookie to the response
+                  response.addCookie(cookie);
+                  return "User update successful.";
+                } else {
+                    return "User update failed.";
+                }
+            })
+            .exceptionally(ex -> {
+                // Handle any unexpected exceptions
+                return "Error updating user: " + ex.getMessage();
+            });
+  }
+
+  @GetMapping("/all_doctors")
+  @ResponseBody
+  public CompletableFuture<List<User>> getAllDoctors() {
+      return authService.getAllDoctors();
+  }
+
+  @GetMapping("/search/name")
+  @ResponseBody
+  public CompletableFuture<List<User>> searchUsersByName(@RequestParam String name) {
+      return authService.searchUsersByName(name);
+  }
+
+  // Endpoint to search doctors by partial specialty
+  @GetMapping("/search/specialty")
+  @ResponseBody
+  public CompletableFuture<List<User>> searchDoctorsByPartialSpecialty(@RequestParam String specialty) {        
+    return authService.searchDoctorsByPartialSpecialty(specialty);
+  }
+
 
 
 }
