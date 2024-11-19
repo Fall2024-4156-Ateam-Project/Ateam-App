@@ -3,7 +3,6 @@ package com.example.clientapp;
 
 import com.example.clientapp.apiService.UserService;
 import com.example.clientapp.user.AuthService;
-import com.example.clientapp.user.AuthService.DataCallback;
 import com.example.clientapp.user.Doctor;
 import com.example.clientapp.user.User;
 import com.example.clientapp.util.CommonTypes;
@@ -15,7 +14,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -230,16 +228,7 @@ public class MainController {
   @GetMapping("/all_doctors")
   @ResponseBody
   public List<Doctor> getAllDoctors() {
-    final List<Doctor> doctors = new ArrayList<>();
-    
-    authService.getAllDoctors(new DataCallback() {
-        @Override
-        public void onDataFetched(List<Doctor> fetchedDoctors) {
-            doctors.addAll(fetchedDoctors);  // Store fetched doctors in the list
-        }
-    });
-
-    return doctors;
+      return authService.getAllDoctors();
   }
 
   @GetMapping("/search/name")
