@@ -14,6 +14,9 @@ public class Patient extends User {
     public Patient(String email, String password, String name, CommonTypes.Role role){
         super(email, password, name, role);
     }
+    public Patient(){
+        super();
+    }
 
     public String getMedicalHistory() {
         return medicalHistory;

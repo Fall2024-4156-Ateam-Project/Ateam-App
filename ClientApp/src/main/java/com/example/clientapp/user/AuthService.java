@@ -207,30 +207,32 @@ public class AuthService {
   }
 
   // Method to get all doctors' information
-  public List<Doctor> getAllDoctors() {
-    List<Doctor> doctors = new ArrayList<>();
-
+  public CompletableFuture<List<User>> getAllDoctors() {
+    List<User> doctors = new ArrayList<>();
+    CompletableFuture<List<User>> future = new CompletableFuture<>();
     Query query = databaseReference.orderByChild("role").equalTo("doctor");
 
     query.addListenerForSingleValueEvent(new ValueEventListener() {
         @Override
         public void onDataChange(DataSnapshot dataSnapshot) {
           for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-            Doctor doctor = snapshot.getValue(Doctor.class);
+            User doctor = snapshot.getValue(User.class);
             if (doctor != null) {
+              System.out.println("doctor is");
+              System.out.println(doctor.getName());
               doctors.add(doctor);
             }
           }
+          future.complete(doctors);
         }
 
         @Override
         public void onCancelled(DatabaseError databaseError) {
-          System.err.println("Error fetching data: " + databaseError.getMessage());
-          throw new RuntimeException("Database query cancelled: " + databaseError.getMessage());
+          future.completeExceptionally(databaseError.toException());
         }
     });
 
-    return doctors;
+    return future;
   }
 
   // Search users by name
@@ -268,8 +270,8 @@ public class AuthService {
     return future;  // Return the CompletableFuture to handle asynchronously
 }
 
-public CompletableFuture<List<Doctor>> searchDoctorsByPartialSpecialty(String specialtySubstring) {
-  CompletableFuture<List<Doctor>> future = new CompletableFuture<>();
+public CompletableFuture<List<User>> searchDoctorsByPartialSpecialty(String specialtySubstring) {
+  CompletableFuture<List<User>> future = new CompletableFuture<>();
 
   // Normalize the search term to lowercase for case-insensitive comparison
   String searchTerm = specialtySubstring.toLowerCase();
@@ -278,14 +280,14 @@ public CompletableFuture<List<Doctor>> searchDoctorsByPartialSpecialty(String sp
   databaseReference.orderByChild("specialty").addValueEventListener(new ValueEventListener() {
       @Override
       public void onDataChange(DataSnapshot dataSnapshot) {
-          List<Doctor> doctors = new ArrayList<>();
+          List<User> doctors = new ArrayList<>();
 
           // Iterate over all doctors in the database
           for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
               Doctor doctor = snapshot.getValue(Doctor.class);
 
               // Check if the doctor's specialty contains the search term
-              if (doctor != null && doctor.getSpecialty().toLowerCase().contains(searchTerm)) {
+              if (doctor != null && doctor.getSpecialty() != null && doctor.getSpecialty().toLowerCase().contains(searchTerm)) {
                   doctors.add(doctor);  // Add doctor to the result list if it matches
               }
           }
@@ -329,6 +331,9 @@ public CompletableFuture<Boolean> updateUserByEmail(String email, Map<String, Ob
           if (fieldsToUpdate.containsKey("gender")) {
               updates.put("gender", fieldsToUpdate.get("gender"));
           }
+          if (fieldsToUpdate.containsKey("name")) {
+            updates.put("name", fieldsToUpdate.get("name"));
+        }
           if (fieldsToUpdate.containsKey("dateOfBirth")) {
               String dateOfBirthDateStr = (String) fieldsToUpdate.get("dateOfBirth");
               LocalDate dateOfBirth = LocalDate.parse(dateOfBirthDateStr);

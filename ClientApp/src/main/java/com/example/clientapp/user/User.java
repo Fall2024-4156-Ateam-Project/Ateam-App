@@ -42,6 +42,10 @@ public class User {
   private String password;
   private String name;
 
+  public User() {
+    // Empty constructor is required for Firebase to deserialize data
+  }
+  
   public User(String email, String password, String name, CommonTypes.Role role) {
     this.email = email;
     this.password = password;

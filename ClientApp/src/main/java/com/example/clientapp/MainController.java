@@ -200,6 +200,7 @@ public class MainController {
 
   
   @PutMapping("/update_request")
+  @ResponseBody
   public CompletableFuture<String> updateUserRequest(HttpServletRequest request, HttpServletResponse response, @RequestBody Map<String, Object> fieldsToUpdate) {
     String email = util.getCookie("email", request);
     if (email == null || email.isEmpty()) {
@@ -227,18 +228,20 @@ public class MainController {
 
   @GetMapping("/all_doctors")
   @ResponseBody
-  public List<Doctor> getAllDoctors() {
+  public CompletableFuture<List<User>> getAllDoctors() {
       return authService.getAllDoctors();
   }
 
   @GetMapping("/search/name")
+  @ResponseBody
   public CompletableFuture<List<User>> searchUsersByName(@RequestParam String name) {
       return authService.searchUsersByName(name);
   }
 
   // Endpoint to search doctors by partial specialty
   @GetMapping("/search/specialty")
-  public CompletableFuture<List<Doctor>> searchDoctorsByPartialSpecialty(@RequestParam String specialty) {        
+  @ResponseBody
+  public CompletableFuture<List<User>> searchDoctorsByPartialSpecialty(@RequestParam String specialty) {        
     return authService.searchDoctorsByPartialSpecialty(specialty);
   }
 

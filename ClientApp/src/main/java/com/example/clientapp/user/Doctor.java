@@ -15,6 +15,9 @@ public class Doctor extends User {
     public Doctor(String email, String password, String name, CommonTypes.Role role){
         super(email, password, name, role);
     }
+    public Doctor(){
+        super();
+    }
 
     // Getter for specialty
     public String getSpecialty() {
