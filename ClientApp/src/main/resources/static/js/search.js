@@ -79,5 +79,4 @@ function displayDoctors(doctors) {
 // Attach event listener to the search button
 document.getElementById("searchButton").addEventListener("click", searchDoctors);
 
-// Fetch all doctors on page load
 document.addEventListener("DOMContentLoaded", fetchAllDoctors);
