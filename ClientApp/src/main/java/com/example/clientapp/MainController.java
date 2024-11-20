@@ -45,7 +45,7 @@ public class MainController {
 
   @Autowired
   public MainController(AuthService authService, JwtUtil jwtUtil, Util util,
-      UserService userService) {
+                        UserService userService) {
     this.authService = authService;
     this.jwtUtil = jwtUtil;
     this.util = util;
@@ -66,9 +66,15 @@ public class MainController {
   public String home(HttpServletRequest request, Model model) {
     String email = null;
 //    String token = null;
+    String name = null;
+    String role = null;
 
     email = util.getCookie("email", request);
+    name = util.getCookie("name", request);
+    role = util.getCookie("role", request);
     model.addAttribute("email", email);
+    model.addAttribute("name", name);
+    model.addAttribute("role", role);
 
     return "home";
   }
@@ -102,14 +108,45 @@ public class MainController {
 
   @PostMapping("/login_request")
   public String loginRequest(String email, String password, Model model,
-      HttpServletResponse response) {
+                             HttpServletResponse response) {
     try {
       boolean success = authService.validateIdentity(email, password).get();
       if (success) {
         // generate JWT token and store into the cookies
         String token = jwtUtil.generateToken(email.toLowerCase());
+        String hashedEmail = util.hashEmail(email.toLowerCase());
+        final String[] nameContainer = {null};
+        final CommonTypes.Role[] roleContainer = {null};
+
+        CompletableFuture<Void> future = authService.getUser(hashedEmail).thenAccept(dataSnapshot -> {
+          if (dataSnapshot.exists()) {
+
+            roleContainer[0] = dataSnapshot.child("role").getValue(CommonTypes.Role.class);
+            nameContainer[0] = dataSnapshot.child("name").getValue(String.class);
+            System.out.println("role " + roleContainer[0]);
+            System.out.println("name " + nameContainer[0]);
+
+          } else {
+            System.out.println("User not found.");
+          }
+        }).exceptionally(throwable -> {
+          System.err.println("Error fetching user data: " + throwable.getMessage());
+          return null;
+        });
+
+        // Block the thread until the async operation completes
+        future.join();
+
+        // Check if the role is still null after the async operation
+        if (roleContainer[0] == null || nameContainer[0] == null) {
+          model.addAttribute("error", "User data could not be fetched.");
+          return "/login_form";
+        }
+
         Cookie tokenCookie = new Cookie("token", token);
         Cookie emailCookie = new Cookie("email", email.toLowerCase());
+        Cookie nameCookie = new Cookie("name", nameContainer[0]);
+        Cookie roleCookie = new Cookie("role", roleContainer[0].toString());
 
         tokenCookie.setHttpOnly(true);
         tokenCookie.setPath("/");
@@ -120,6 +157,16 @@ public class MainController {
         emailCookie.setPath("/");
         emailCookie.setMaxAge(3600 * 10); // 10 hours
         response.addCookie(emailCookie);
+
+        nameCookie.setHttpOnly(true);
+        nameCookie.setPath("/");
+        nameCookie.setMaxAge(3600 * 10); // 10 hours
+        response.addCookie(nameCookie);
+
+        roleCookie.setHttpOnly(true);
+        roleCookie.setPath("/");
+        roleCookie.setMaxAge(3600 * 10); // 10 hours
+        response.addCookie(roleCookie);
 
         return "redirect:/home";
       } else {
@@ -151,7 +198,7 @@ public class MainController {
       while (tryT > 0) {
         Pair<String, Boolean> response = userService.registerUser(email, name);
         System.out.println(
-            "response   " + response.msg() + " status " + response.status() + "Try times " + tryT);
+                "response   " + response.msg() + " status " + response.status() + "Try times " + tryT);
         if (response.status()) {
           break;
         }
@@ -198,7 +245,7 @@ public class MainController {
     return "redirect:/";
   }
 
-  
+
   @PutMapping("/update_request")
   @ResponseBody
   public CompletableFuture<String> updateUserRequest(HttpServletRequest request, HttpServletResponse response, @RequestBody Map<String, Object> fieldsToUpdate) {
@@ -208,44 +255,48 @@ public class MainController {
     }
     return authService.updateUserByEmail(email, fieldsToUpdate)
             .thenApply(success -> {
-                if (success) {
-                  Cookie cookie = new Cookie("email", email);
-                  cookie.setPath("/"); 
-                  cookie.setHttpOnly(true); 
-                  
-                  // Add the cookie to the response
-                  response.addCookie(cookie);
-                  return "User update successful.";
-                } else {
-                    return "User update failed.";
-                }
+              if (success) {
+                Cookie cookie = new Cookie("email", email);
+                cookie.setPath("/");
+                cookie.setHttpOnly(true);
+
+                // Add the cookie to the response
+                response.addCookie(cookie);
+                return "User update successful.";
+              } else {
+                return "User update failed.";
+              }
             })
             .exceptionally(ex -> {
-                // Handle any unexpected exceptions
-                return "Error updating user: " + ex.getMessage();
+              // Handle any unexpected exceptions
+              return "Error updating user: " + ex.getMessage();
             });
   }
 
   @GetMapping("/all_doctors")
   @ResponseBody
   public CompletableFuture<List<User>> getAllDoctors() {
-      return authService.getAllDoctors();
+    return authService.getAllDoctors();
+  }
+
+  @GetMapping("/search")
+  public String searchPage() {
+    return "search";
   }
 
   @GetMapping("/search/name")
   @ResponseBody
   public CompletableFuture<List<User>> searchUsersByName(@RequestParam String name) {
-      return authService.searchUsersByName(name);
+    return authService.searchUsersByName(name);
   }
 
   // Endpoint to search doctors by partial specialty
   @GetMapping("/search/specialty")
   @ResponseBody
-  public CompletableFuture<List<User>> searchDoctorsByPartialSpecialty(@RequestParam String specialty) {        
+  public CompletableFuture<List<User>> searchDoctorsByPartialSpecialty(@RequestParam String specialty) {
     return authService.searchDoctorsByPartialSpecialty(specialty);
   }
 
 
 
 }
-
