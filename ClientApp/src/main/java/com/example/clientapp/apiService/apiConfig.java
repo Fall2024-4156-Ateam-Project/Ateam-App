@@ -11,6 +11,8 @@ public class apiConfig {
 
   public static String USER_FIND_BY_NAME = "/users/findByName";
 
+  public static String USER_FIND_BY_EMAIL = "/users/findByEmail";
+
   public static String USER_GET_ALL = "/users/get_all";
 
 

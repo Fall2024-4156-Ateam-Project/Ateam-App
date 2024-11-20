@@ -10,13 +10,13 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
       background-color: #f4f4f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
+    /* Main container styling */
     .home-container {
       text-align: center;
       padding: 2rem;
@@ -24,6 +24,7 @@
       border-radius: 8px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
       max-width: 400px;
+      margin-top: 2rem;
     }
 
     h1 {
@@ -42,26 +43,75 @@
       color: white;
       text-decoration: none;
       border-radius: 5px;
+      border: none;
+      cursor: pointer;
     }
 
     .button:hover {
       background-color: #45a049;
     }
+
+    /* Toolbar styling */
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      padding: 1rem;
+      margin-top: 1rem;
+      background-color: #fff;
+      border-top: 2px solid #4CAF50;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .toolbar a,
+    .toolbar button {
+      color: #4CAF50;
+      font-weight: bold;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border: 1px solid #4CAF50;
+      border-radius: 5px;
+      background-color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .toolbar a:hover,
+    .toolbar button:hover {
+      background-color: #4CAF50;
+      color: white;
+    }
   </style>
 </head>
 <body>
 
+<!-- Main content -->
 <div class="home-container">
   <h1>Welcome to Your Dashboard</h1>
-  <p>Welcome back, <span class="email" th:text="${email}">[User Email]</span>!</p>
+  <p>Welcome back, <span class="name" th:text="${name}">[User Name]</span>!</p>
   <p>We're glad to see you again.</p>
-
-  <!-- Example logout button -->
   <form action="/logout_request" method="post">
-    <button type="submit">Logout</button>
+    <button type="submit" class="button">Logout</button>
   </form>
 </div>
 
+<!-- Role-based Toolbar -->
+<div class="toolbar">
+  <!-- Patient Toolbar -->
+  <div th:if="${role == 'patient'}">
+    <a href="/search">Search Doctor</a>
+    <a href="/view_schedule">My Schedule</a>
+    <a href="/view_requests">My Requests</a>
+  </div>
+
+  <!-- Doctor Toolbar -->
+  <div th:if="${role == 'doctor'}">
+    <a href="/view_timeslots">View Time Slots</a>
+    <a href="/view_schedule">My Schedule</a>
+    <a href="/manage_appointments">Manage Appointments</a>
+  </div>
+</div>
 
 </body>
 </html>

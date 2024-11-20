@@ -27,8 +27,8 @@ public class UserService {
 
   HttpHeaders headers = new HttpHeaders();
   ParameterizedTypeReference<GenericApiResponse<Map<String, String>>> responseType =
-      new ParameterizedTypeReference<GenericApiResponse<Map<String, String>>>() {
-      };
+          new ParameterizedTypeReference<GenericApiResponse<Map<String, String>>>() {
+          };
 
 
   private HttpEntity<Map<String, String>> generateRequest(Map<String, String> requestBody) {
@@ -46,7 +46,7 @@ public class UserService {
     HttpEntity<Map<String, String>> request = generateRequest(requestBody);
     try {
       ResponseEntity<String> rawResponse = restTemplate.postForEntity(url, request,
-          String.class);
+              String.class);
       System.out.println("Response Body: " + rawResponse.getBody());
       return new Pair<>(rawResponse.getBody(), true);
     } catch (HttpClientErrorException | HttpServerErrorException e) {

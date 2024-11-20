@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Doctors</title>
+
+  <!-- Correct Thymeleaf link for CSS -->
+  <link rel="stylesheet" th:href="@{/static/css/search.css}">
+  <link rel="stylesheet" href="../static/css/search.css">
+</head>
+<body>
+
+<div class="search-container">
+  <h1>Search Doctors</h1>
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Enter name or specialty">
+    <select id="searchType">
+      <option value="name">By Name</option>
+      <option value="specialty">By Specialty</option>
+    </select>
+    <button id="searchButton">Search</button>
+  </div>
+
+  <div class="doctor-list" id="doctorList"></div>
+</div>
+
+<!-- Correct Thymeleaf link for JS -->
+<script th:src="@{/static/js/search.js}"></script>
+<script src="../static/js/search.js"></script>
+</body>
+</html>
