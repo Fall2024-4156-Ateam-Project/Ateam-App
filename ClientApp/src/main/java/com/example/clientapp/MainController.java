@@ -134,7 +134,7 @@ public class MainController {
 
 
   /**
-   * Send register request
+   * Send register request (Transactional)
    *
    * @param email
    * @param password
@@ -144,31 +144,23 @@ public class MainController {
    */
 
   @PostMapping("/register_request")
-  public String registerRequest(String email, String password, String name, CommonTypes.Role role, Model model) {
+  public String registerRequest(String email, String password, String name, CommonTypes.Role role,
+      Model model) {
     try {
-      boolean success = authService.saveNewUser(name, email, password, role).get();
-      int tryT = 3;
-      while (tryT > 0) {
-        Pair<String, Boolean> response = userService.registerUser(email, name);
-        System.out.println(
-            "response   " + response.msg() + " status " + response.status() + "Try times " + tryT);
-        if (response.status()) {
-          break;
-        }
-
-        tryT--;
-      }
-
-      if (success) {
-        return "login_form";
-      } else {
-        model.addAttribute("error", "User already exists.");
-        return "register_form";
-      }
+      // Synchronously
+      String result = authService.registerUserBothAsync(name, email, password, role)
+          .exceptionally(ex -> {
+            System.err.println("Error occurred: " + ex.getCause().getMessage());
+            model.addAttribute("error", ex.getCause().getMessage());
+            return "register_form";
+          })
+          .join();
+      return result;
     } catch (Exception ex) {
-      model.addAttribute("error", "An unexpected error occurred: " + ex.getMessage());
+      model.addAttribute("error", ex.getCause().getMessage());
       return "register_form";
     }
+
   }
 
 
@@ -198,53 +190,55 @@ public class MainController {
     return "redirect:/";
   }
 
-  
+
   @PutMapping("/update_request")
   @ResponseBody
-  public CompletableFuture<String> updateUserRequest(HttpServletRequest request, HttpServletResponse response, @RequestBody Map<String, Object> fieldsToUpdate) {
+  public CompletableFuture<String> updateUserRequest(HttpServletRequest request,
+      HttpServletResponse response, @RequestBody Map<String, Object> fieldsToUpdate) {
     String email = util.getCookie("email", request);
     if (email == null || email.isEmpty()) {
-      return CompletableFuture.completedFuture("Email is required and must be present in the cookies.");
+      return CompletableFuture.completedFuture(
+          "Email is required and must be present in the cookies.");
     }
     return authService.updateUserByEmail(email, fieldsToUpdate)
-            .thenApply(success -> {
-                if (success) {
-                  Cookie cookie = new Cookie("email", email);
-                  cookie.setPath("/"); 
-                  cookie.setHttpOnly(true); 
-                  
-                  // Add the cookie to the response
-                  response.addCookie(cookie);
-                  return "User update successful.";
-                } else {
-                    return "User update failed.";
-                }
-            })
-            .exceptionally(ex -> {
-                // Handle any unexpected exceptions
-                return "Error updating user: " + ex.getMessage();
-            });
+        .thenApply(success -> {
+          if (success) {
+            Cookie cookie = new Cookie("email", email);
+            cookie.setPath("/");
+            cookie.setHttpOnly(true);
+
+            // Add the cookie to the response
+            response.addCookie(cookie);
+            return "User update successful.";
+          } else {
+            return "User update failed.";
+          }
+        })
+        .exceptionally(ex -> {
+          // Handle any unexpected exceptions
+          return "Error updating user: " + ex.getMessage();
+        });
   }
 
   @GetMapping("/all_doctors")
   @ResponseBody
   public CompletableFuture<List<User>> getAllDoctors() {
-      return authService.getAllDoctors();
+    return authService.getAllDoctors();
   }
 
   @GetMapping("/search/name")
   @ResponseBody
   public CompletableFuture<List<User>> searchUsersByName(@RequestParam String name) {
-      return authService.searchUsersByName(name);
+    return authService.searchUsersByName(name);
   }
 
   // Endpoint to search doctors by partial specialty
   @GetMapping("/search/specialty")
   @ResponseBody
-  public CompletableFuture<List<User>> searchDoctorsByPartialSpecialty(@RequestParam String specialty) {        
+  public CompletableFuture<List<User>> searchDoctorsByPartialSpecialty(
+      @RequestParam String specialty) {
     return authService.searchDoctorsByPartialSpecialty(specialty);
   }
-
 
 
 }

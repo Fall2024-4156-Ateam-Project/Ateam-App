@@ -17,11 +17,12 @@ public class WebSecurityConfig {
 
   @Autowired
   private JwtRequestFilter jwtRequestFilter;
+  @Autowired
+  private RequestLoggingFilter requestLoggingFilter;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http
-        .csrf(csrf -> csrf.disable());
+    http.csrf(csrf -> csrf.disable());
 //        .authorizeHttpRequests(authz -> authz
 //            .requestMatchers("/register_request", "/register_form", "/login_form", "/login_request",
 //                "/logout_request", "/")
@@ -31,8 +32,10 @@ public class WebSecurityConfig {
 //        .sessionManagement(session -> session
 //            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 //        );
-
     http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+    http.addFilterBefore(requestLoggingFilter, JwtRequestFilter.class);
+
+
 
     return http.build();
   }

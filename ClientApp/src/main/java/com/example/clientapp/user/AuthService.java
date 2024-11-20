@@ -31,10 +31,11 @@ public class AuthService {
 
   private final FirebaseApp firebaseApp;
   private final DatabaseReference databaseReference;
-
   private final Util util;
-
   private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+  @Autowired
+  private UserService userService;
 
   /**
    * Creates an instance of the Firebase Service.
@@ -187,6 +188,32 @@ public class AuthService {
   }
 
 
+  /**
+   * Saving a new user to service and auth service
+   * @param name
+   * @param email
+   * @param password
+   * @param role
+   * @return
+   */
+  public CompletableFuture<String> registerUserBothAsync(String name, String email, String password, CommonTypes.Role role) {
+    return this.saveNewUser(name, email, password, role)
+        .thenCompose(success -> {
+          if (!success) {
+            System.out.println("registerUserBothAsync: saveNewUser not success");
+            return CompletableFuture.failedFuture(new IllegalArgumentException("User already exists."));
+          }
+          return userService.registerUser(email, name)
+              .thenApply(response -> {
+                if (!response.status()) {
+                  this.deleteUser(email); // Rollback user creation
+                  throw new RuntimeException(response.msg());
+                }
+                return "login_form"; // Success
+              });
+        });
+  }
+
   public CompletableFuture<Boolean> validateIdentity(String email, String password) {
     String hashedEmail = util.hashEmail(email.toLowerCase());
     CompletableFuture<Boolean> future = new CompletableFuture<>();
@@ -304,6 +331,25 @@ public CompletableFuture<List<User>> searchDoctorsByPartialSpecialty(String spec
 
   return future;
 }
+
+
+  public CompletableFuture<Void> deleteUser(String email) {
+    String hashedEmail = util.hashEmail(email);
+    CompletableFuture<Void> future = new CompletableFuture<>();
+
+    ApiFuture<Void> apiFuture = databaseReference.child(hashedEmail).removeValueAsync();
+    apiFuture.addListener(() -> {
+      try {
+        apiFuture.get();
+        future.complete(null);
+      } catch (Exception e) {
+        future.completeExceptionally(e);
+      }
+    }, Executors.newSingleThreadExecutor());
+
+    return future;
+  }
+
 
 
 public CompletableFuture<Boolean> updateUserByEmail(String email, Map<String, Object> fieldsToUpdate) {
