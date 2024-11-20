@@ -13,6 +13,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.net.URLEncoder;
 import java.util.concurrent.CompletableFuture;
 import java.util.List;
 import java.util.Map;
@@ -142,31 +143,6 @@ public class MainController {
           model.addAttribute("error", "User data could not be fetched.");
           return "/login_form";
         }
-
-        Cookie tokenCookie = new Cookie("token", token);
-        Cookie emailCookie = new Cookie("email", email.toLowerCase());
-        Cookie nameCookie = new Cookie("name", nameContainer[0]);
-        Cookie roleCookie = new Cookie("role", roleContainer[0].toString());
-
-        tokenCookie.setHttpOnly(true);
-        tokenCookie.setPath("/");
-        tokenCookie.setMaxAge(3600 * 10); // 10 hours
-        response.addCookie(tokenCookie);
-
-        emailCookie.setHttpOnly(true);
-        emailCookie.setPath("/");
-        emailCookie.setMaxAge(3600 * 10); // 10 hours
-        response.addCookie(emailCookie);
-
-        nameCookie.setHttpOnly(true);
-        nameCookie.setPath("/");
-        nameCookie.setMaxAge(3600 * 10); // 10 hours
-        response.addCookie(nameCookie);
-
-        roleCookie.setHttpOnly(true);
-        roleCookie.setPath("/");
-        roleCookie.setMaxAge(3600 * 10); // 10 hours
-        response.addCookie(roleCookie);
 
         return "redirect:/home";
       } else {

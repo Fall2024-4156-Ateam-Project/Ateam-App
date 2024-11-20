@@ -3,6 +3,10 @@ package com.example.clientapp.util;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
@@ -33,10 +37,18 @@ public class Util {
     if (request.getCookies() != null) {
       for (Cookie cookie : request.getCookies()) {
         if (name.equals(cookie.getName())) {
-          return cookie.getValue();
+          return URLDecoder.decode(cookie.getValue(), StandardCharsets.UTF_8);
         }
       }
     }
     return null;
+  }
+
+  public void setCookie(String cookieName, String cookieValue, HttpServletResponse response) {
+    Cookie cookie = new Cookie(cookieName, URLEncoder.encode(cookieValue, StandardCharsets.UTF_8));
+    cookie.setHttpOnly(true);
+    cookie.setPath("/");
+    cookie.setMaxAge(3600 * 10); // 10 hours
+    response.addCookie(cookie);
   }
 }
