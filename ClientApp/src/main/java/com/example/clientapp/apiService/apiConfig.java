@@ -18,4 +18,19 @@ public class apiConfig {
   public final static String TIME_SLOT_GET_ALL_BY_EMAIL = "/timeslots/user";
 //  public final static String TIME_SLOT_GET_ALL_BY_EMAIL = "/timeslots/user/email";
 
+  public static String GET_TIMESLOT_BY_ID = "/timeslots/{id}";
+
+  public static String TIMESLOTS = "/timeslots";
+
+  public static String GET_TIMESLOTS_BY_USER_ID = "/timeslots/user/{uid}";
+
+  public static String GET_TIMESLOTS_BY_DAY = "/timeslots/day/{day}";
+
+  public static String UPDATE_TIMESLOTS_BY_AVAILABILITY = "/timeslots/availability/{availability}";
+
+  public static String UPDATE_TIMESLOT_BY_ID = "/timeslots/{id}";
+
+  public static String DELETE_TIMESLOT_BY_ID = "/timeslots/{id}";
+
+
 }
