@@ -77,77 +77,18 @@ function displayDoctors(doctors) {
         `;
     doctorList.appendChild(doctorDiv);
     const timeSlotButton = doctorDiv.querySelector(".time-slot-button");
-    timeSlotButton.addEventListener("click",
-        () => fetchDoctorTimeSlots(doctor.email, doctorDiv));
-
+    timeSlotButton.addEventListener("click", () => {
+      redirectToTimeSlotsPage(doctor.email);
+    });
     doctorList.appendChild(doctorDiv);
   });
 }
 
-function fetchDoctorTimeSlots(email, doctorDiv) {
-  // Ensure doctorDiv and timeSlotsDiv are properly referenced
-  const timeSlotsDiv = doctorDiv.querySelector(".time-slots");
-  if (!timeSlotsDiv) {
-    console.error("Time slots placeholder not found in doctorDiv");
-    return;
-  }
-
-  // Clear existing content in the time slots container
-  timeSlotsDiv.innerHTML = "<p>Loading...</p>";
-
-  // Fetch data from the server
-  fetch(`/search/doctor/timeSlots?doctorEmail=${encodeURIComponent(email)}`)
-  .then(response => {
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.json(); // Parse JSON response
-  })
-  .then(data => {
-    // Check if the response indicates success
-    if (!data.status) {
-      timeSlotsDiv.innerHTML = `<p style="color: red;">Error: ${data.message}</p>`;
-      return;
-    }
-
-    // Call displayTimeSlots with parsed data
-    displayTimeSlots(data.data, doctorDiv);
-  })
-  .catch(error => {
-    console.error("Error fetching time slots:", error);
-    timeSlotsDiv.innerHTML = `<p style="color: red;">An error occurred while fetching time slots.</p>`;
-  });
+function redirectToTimeSlotsPage(email) {
+  window.location.href = `/search/doctor/timeSlots?doctorEmail=${encodeURIComponent(
+      email)}`;
 }
 
-function displayTimeSlots(timeSlots, doctorDiv) {
-  const timeSlotsDiv = doctorDiv.querySelector(".time-slots");
-  if (!timeSlotsDiv) {
-    console.error("Time slots placeholder not found in doctorDiv");
-    return;
-  }
-
-  // Clear the loading or previous content
-  timeSlotsDiv.innerHTML = "";
-
-  // Handle empty time slots array
-  if (timeSlots.length === 0) {
-    timeSlotsDiv.innerHTML = "<p>No time slots available.</p>";
-    return;
-  }
-
-  // Generate and append time slot elements
-  timeSlots.forEach(slot => {
-    const slotDiv = document.createElement("div");
-    slotDiv.className = "time-slot-item";
-    slotDiv.innerHTML = `
-      <p><strong>Day:</strong> ${slot.day}</p>
-      <p><strong>Start Time:</strong> ${slot.startTime}</p>
-      <p><strong>End Time:</strong> ${slot.endTime}</p>
-      <p><strong>Availability:</strong> ${slot.availability}</p>
-    `;
-    timeSlotsDiv.appendChild(slotDiv);
-  });
-}
 // Attach event listener to the search button
 document.getElementById("searchButton").addEventListener("click",
     searchDoctors);

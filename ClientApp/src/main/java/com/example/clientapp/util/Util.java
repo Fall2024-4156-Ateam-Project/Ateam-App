@@ -45,8 +45,8 @@ public class Util {
   }
 
   public void setCookie(String cookieName, String cookieValue, HttpServletResponse response) {
-    //Cookie cookie = new Cookie(cookieName, URLEncoder.encode(cookieValue, StandardCharsets.UTF_8));
-    Cookie cookie = new Cookie(cookieName, cookieValue);
+    Cookie cookie = new Cookie(cookieName, URLEncoder.encode(cookieValue, StandardCharsets.UTF_8));
+//    Cookie cookie = new Cookie(cookieName, cookieValue);
     cookie.setHttpOnly(false);
     cookie.setPath("/");
     cookie.setMaxAge(3600 * 10); // 10 hours

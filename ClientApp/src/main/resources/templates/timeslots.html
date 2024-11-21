@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Time Slots</title>
+</head>
+<body>
+<h1>Doctor Time Slots</h1>
+<!-- Display error if present -->
+<div th:if="${error}" style="color: red;">
+  <p th:text="${error}"></p>
+</div>
+
+<!-- Display time slots if available -->
+<div th:if="${timeSlots}">
+  <ul>
+    <li th:each="slot : ${timeSlots}">
+      <p><strong>Day:</strong> <span th:text="${slot.day}"></span></p>
+      <p><strong>Start Time:</strong> <span th:text="${slot.startTime}"></span></p>
+      <p><strong>End Time:</strong> <span th:text="${slot.endTime}"></span></p>
+      <p><strong>Availability:</strong> <span th:text="${slot.availability}"></span></p>
+      <hr>
+    </li>
+  </ul>
+</div>
+
+<!-- Display message if no time slots -->
+<div th:if="${timeSlots == null || #lists.isEmpty(timeSlots)}">
+  <p>No time slots available.</p>
+</div>
+</body>
+</html>

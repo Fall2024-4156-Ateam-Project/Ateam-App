@@ -1,4 +1,4 @@
-console.log("Cookies: ", document.cookie);
+console.log("Raw Cookies: ", document.cookie);
 
 // Utility function to get cookies by name
 function getCookie(name) {
@@ -6,6 +6,15 @@ function getCookie(name) {
     let parts = value.split(`; ${name}=`);
     if (parts.length === 2) {
         return parts.pop().split(';').shift();
+    }
+    return null;
+}
+function getCookieWithUTF8(name) {
+    let value = `; ${document.cookie}`;
+    let parts = value.split(`; ${name}=`);
+    if (parts.length === 2) {
+        // Decode the cookie value using UTF-8
+        return decodeURIComponent(parts.pop().split(';').shift());
     }
     return null;
 }
@@ -29,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
         event.preventDefault(); // Prevent default form submission
 
         // Retrieve email from cookies
-        const email = getCookie('email'); // Get the email from cookies
+        const email = getCookieWithUTF8('email'); // Get the email from cookies
         console.log('Retrieved email from cookies:', email);
 
         // Collect form data

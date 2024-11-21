@@ -303,15 +303,28 @@ public class MainController {
    * @return
    */
   @GetMapping("/search/doctor/timeSlots")
-  @ResponseBody
-  public CompletableFuture<Triple<String, Boolean, List<TimeSlot>>> getDoctorTimeSlots(@RequestParam String doctorEmail,
-      HttpServletRequest request) {
+  public String getDoctorTimeSlots(@RequestParam String doctorEmail,
+      HttpServletRequest request, Model model) {
     String email = util.getCookie("email", request);
     String role = util.getCookie("role", request);
 //    if (!role.equals(Role.doctor)){
 //      return CompletableFuture.completedFuture( new ArrayList<>());
 //    }
-    return timeSlotService.getUserTimeSlots(email);
+//    CompletableFuture<Triple<String, Boolean, List<TimeSlot>>>
+    try{
+      Triple<String, Boolean, List<TimeSlot>> result = timeSlotService.getUserTimeSlots(doctorEmail).get();
+      if (!result.getStatus()){
+        model.addAttribute("error", result.getMessage());
+        return "timeslots";
+      }
+      model.addAttribute("timeSlots", result.getData());
+      return "timeslots";
+    } catch (Exception e) {
+      // Handle unexpected errors
+      model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());
+      return "error"; // error page
+    }
+//    return timeSlotService.getUserTimeSlots(email);
   }
 
 
