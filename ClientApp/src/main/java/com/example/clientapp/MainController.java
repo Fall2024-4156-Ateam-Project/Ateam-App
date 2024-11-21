@@ -1,19 +1,24 @@
 package com.example.clientapp;
 
 
+import com.example.clientapp.apiService.TimeSlotService;
 import com.example.clientapp.apiService.UserService;
 import com.example.clientapp.user.AuthService;
 import com.example.clientapp.user.Doctor;
+import com.example.clientapp.user.TimeSlot;
 import com.example.clientapp.user.User;
 import com.example.clientapp.util.CommonTypes;
+import com.example.clientapp.util.CommonTypes.Role;
 import com.example.clientapp.util.JwtUtil;
 import com.example.clientapp.util.Pair;
+import com.example.clientapp.util.Triple;
 import com.example.clientapp.util.Util;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.List;
 import java.util.Map;
@@ -40,17 +45,21 @@ public class MainController {
   private final AuthService authService;
 
   private final UserService userService;
+
+  private final TimeSlotService timeSlotService;
+
   private final JwtUtil jwtUtil;
 
   private final Util util;
 
   @Autowired
   public MainController(AuthService authService, JwtUtil jwtUtil, Util util,
-      UserService userService) {
+      UserService userService, TimeSlotService timeSlotService) {
     this.authService = authService;
     this.jwtUtil = jwtUtil;
     this.util = util;
     this.userService = userService;
+    this.timeSlotService = timeSlotService;
   }
 
   @GetMapping(value = "/")
@@ -283,5 +292,20 @@ public class MainController {
     return authService.searchDoctorsByPartialSpecialty(specialty);
   }
 
-
+  /**
+   * Showing list of doctor timeslots
+   *
+   * @return
+   */
+  @GetMapping("/search/doctor/timeSlots")
+  @ResponseBody
+  public CompletableFuture<Triple<String, Boolean, List<TimeSlot>>> getDoctorTimeSlots(@RequestParam String doctorEmail,
+      HttpServletRequest request) {
+    String email = util.getCookie("email", request);
+    String role = util.getCookie("role", request);
+//    if (!role.equals(Role.doctor)){
+//      return CompletableFuture.completedFuture( new ArrayList<>());
+//    }
+    return timeSlotService.getUserTimeSlots(email);
+  }
 }
