@@ -107,6 +107,10 @@ public class MainController {
     return "register_form";
   }
 
+  @GetMapping("/timeslot_create_form")
+  public String createTimeslotForm() {
+    return "timeslot_create_form";
+  }
   /**
    * Send login request
    *
@@ -154,6 +158,7 @@ public class MainController {
           model.addAttribute("error", "User data could not be fetched.");
           return "/login_form";
         }
+
         util.setCookie("token", token, response);
         util.setCookie("email", email, response);
         util.setCookie("name", nameContainer[0], response);
@@ -307,5 +312,31 @@ public class MainController {
 //      return CompletableFuture.completedFuture( new ArrayList<>());
 //    }
     return timeSlotService.getUserTimeSlots(email);
+  }
+
+
+  @PostMapping("/timeslot_create_form")
+  @ResponseBody
+  public String createTimeslot(@RequestParam String email,
+                               @RequestParam String day,
+                               @RequestParam String startTime,
+                               @RequestParam String endTime,
+                               @RequestParam String availability,
+                               Model model) {
+    System.out.println("email: "+email);
+    System.out.println("day: "+day);
+    try {
+      Pair<String, Boolean> response = timeSlotService.createTimeslot(email, day, startTime, endTime, availability);
+      System.out.println("Response: " + response.msg() + " Status: " + response.status());
+      if (!response.status()) {
+        model.addAttribute("error", response.msg());
+        return "timeslot_create_form";
+      }
+      model.addAttribute("success", "Timeslot created successfully.");
+      return "home";
+    } catch (Exception ex) {
+      model.addAttribute("error", "An unexpected error occurred: " + ex.getMessage());
+      return "timeslot_create_form";
+    }
   }
 }
