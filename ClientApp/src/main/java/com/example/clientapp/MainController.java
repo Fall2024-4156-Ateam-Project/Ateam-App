@@ -12,6 +12,7 @@ import com.example.clientapp.util.Util;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.CookieValue;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.List;
@@ -38,7 +39,9 @@ public class MainController {
 
   private final AuthService authService;
 
+  @Autowired
   private final UserService userService;
+
   private final JwtUtil jwtUtil;
 
   private final Util util;
@@ -144,7 +147,7 @@ public class MainController {
         }
 
         Cookie tokenCookie = new Cookie("token", token);
-        Cookie emailCookie = new Cookie("email", email.toLowerCase());
+        Cookie emailCookie = new Cookie("email", email);
         Cookie nameCookie = new Cookie("name", nameContainer[0]);
         Cookie roleCookie = new Cookie("role", roleContainer[0].toString());
 
@@ -153,7 +156,7 @@ public class MainController {
         tokenCookie.setMaxAge(3600 * 10); // 10 hours
         response.addCookie(tokenCookie);
 
-        emailCookie.setHttpOnly(true);
+        emailCookie.setHttpOnly(false);
         emailCookie.setPath("/");
         emailCookie.setMaxAge(3600 * 10); // 10 hours
         response.addCookie(emailCookie);
@@ -284,6 +287,11 @@ public class MainController {
     return "search";
   }
 
+  @GetMapping("/timeslot_create_form")
+  public String createTimeslotForm() {
+    return "timeslot_create_form";
+  }
+
   @GetMapping("/search/name")
   @ResponseBody
   public CompletableFuture<List<User>> searchUsersByName(@RequestParam String name) {
@@ -297,6 +305,29 @@ public class MainController {
     return authService.searchDoctorsByPartialSpecialty(specialty);
   }
 
+  @PostMapping("/timeslot_create_form")
+  public String createTimeslot(@RequestParam String email,
+                               @RequestParam String day,
+                               @RequestParam String startTime,
+                               @RequestParam String endTime,
+                               @RequestParam String availability,
+                               Model model) {
+    System.out.println("email: "+email);
+    System.out.println("day: "+day);
+    try {
+      Pair<String, Boolean> response = userService.createTimeslot(email, day, startTime, endTime, availability);
+      System.out.println("Response: " + response.msg() + " Status: " + response.status());
+      if (!response.status()) {
+        model.addAttribute("error", response.msg());
+        return "timeslot_create_form";
+      }
+      model.addAttribute("success", "Timeslot created successfully.");
+      return "home";
+    } catch (Exception ex) {
+      model.addAttribute("error", "An unexpected error occurred: " + ex.getMessage());
+      return "timeslot_create_form";
+    }
+  }
 
 
 }

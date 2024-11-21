@@ -109,10 +109,24 @@
   <div th:if="${role == 'doctor'}">
     <a href="/search">Search Doctor</a>
     <a href="/view_timeslots">View Time Slots</a>
+    <a href="/timeslot_create_form">Create Time Slot</a>
     <a href="/view_schedule">My Schedule</a>
     <a href="/manage_appointments">Manage Appointments</a>
   </div>
 </div>
+<script>
+function getCookie(name) {
+  let value = `; ${document.cookie}`;
+  let parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return parts.pop().split(';').shift();
+  }
+  return null;
+}
 
+console.log('Email Cookie:', getCookie('email')); // Check if email cookie is available
+console.log('Name Cookie:', getCookie('name'));   // Check if name cookie is available
+console.log('Role Cookie:', getCookie('role'));   // Check if role cookie is available
+</script>
 </body>
 </html>
