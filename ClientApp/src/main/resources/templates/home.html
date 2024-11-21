@@ -89,7 +89,9 @@
 <!-- Main content -->
 <div class="home-container">
   <h1>Welcome to Your Dashboard</h1>
-  <p>Welcome back, <span class="name" th:text="${name}">[User Name]</span>!</p>
+  <p>Welcome back, <span class="name" th:text="${role}">[Role]</span> <span class="name"
+                                                                                 th:text="${name}">[User Name]</span>!
+  </p>
   <p>We're glad to see you again.</p>
   <form action="/logout_request" method="post">
     <button type="submit" class="button">Logout</button>

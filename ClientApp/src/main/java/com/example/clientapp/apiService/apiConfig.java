@@ -15,6 +15,7 @@ public class apiConfig {
 
   public static String USER_GET_ALL = "/users/get_all";
 
-
+  public final static String TIME_SLOT_GET_ALL_BY_EMAIL = "/timeslots/user";
+//  public final static String TIME_SLOT_GET_ALL_BY_EMAIL = "/timeslots/user/email";
 
 }
