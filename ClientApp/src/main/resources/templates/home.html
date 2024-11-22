@@ -110,33 +110,18 @@
   <!-- Doctor Toolbar -->
   <div th:if="${role == 'doctor'}">
     <a href="/search">Search Doctor</a>
-    <a href="/view_timeslots">View Time Slots</a>
+    <a th:href="'/search/doctor/timeSlots?doctorEmail=' + ${email}">View Time Slots</a>
     <a href="/timeslot_create_form">Create Time Slot</a>
     <a href="/view_schedule">My Schedule</a>
     <a href="/manage_appointments">Manage Appointments</a>
   </div>
 </div>
-<script>
-  function getCookie(name) {
-    let value = `; ${document.cookie}`;
-    let parts = value.split(`; ${name}=`);
-    if (parts.length === 2) {
-      return parts.pop().split(';').shift();
-    }
-    return null;
-  }
-  function getCookieWithUTF8(name) {
-    let value = `; ${document.cookie}`;
-    let parts = value.split(`; ${name}=`);
-    if (parts.length === 2) {
-      return decodeURIComponent(parts.pop().split(';').shift());
-    }
-    return null;
-  }
-  
-  console.log('Email Cookie:', getCookieWithUTF8('email')); // Check if email cookie is available
-  console.log('Name Cookie:', getCookieWithUTF8('name'));   // Check if name cookie is available
-  console.log('Role Cookie:', getCookieWithUTF8('role'));   // Check if role cookie is available
+<script th:inline="javascript">
+  /* <![CDATA[ */
+  const doctorEmail = /*[[${email}]]*/ '';
+  const url = `/search/doctor/timeSlots?doctorEmail=${doctorEmail}`;
+  console.log("Generated URL:", url);
+  /* ]]> */
 </script>
 </body>
 </html>

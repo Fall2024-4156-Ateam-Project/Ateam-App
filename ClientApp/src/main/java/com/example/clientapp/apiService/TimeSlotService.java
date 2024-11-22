@@ -54,17 +54,69 @@ public class TimeSlotService {
     HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
     return request;
   }
+/*
+  public String getUserTimeSlots(String email) {
+
+    Map<String, Object> user = findUserByEmail(email);
+    System.out.println("User Object: " + user);
+
+    if (user == null) {
+      return "User not found with the given email: " + email;
+    }
+
+    Integer userId = (Integer) user.get("uid");
+    if (userId == null) {
+      return "User ID is missing for the given email: " + email;
+    }
+
+
+    String url = apiConfig.baseApi + apiConfig.GET_TIMESLOTS_BY_USER_ID + userId;
+    System.out.println("API URL: " + url);
+
+    Map<String, Object> requestBody = new HashMap<>();
+
+    HttpEntity<Void> request = generateRequest(); // Use the version without body
+
+    try {
+
+      ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
+
+      System.out.println("Response Body: " + response.getBody());
+      return response.getBody();
+
+    } catch (HttpClientErrorException | HttpServerErrorException e) {
+
+      System.out.println("Error Response Body: " + e.getResponseBodyAsString());
+      System.out.println("Error Response Status: " + e.getStatusCode());
+      return "Error Response: " + e.getResponseBodyAsString();
+    } catch (Exception e) {
+
+      System.out.println("Unexpected Error: " + e.getMessage());
+      return "Unexpected error occurred: " + e.getMessage();
+    }
+  }
+*/
+
 
   public CompletableFuture<Triple<String, Boolean, List<TimeSlot>>> getUserTimeSlots(String email) {
     // prepare request
-    String url = UriComponentsBuilder.fromHttpUrl(
-            apiConfig.baseApi + apiConfig.TIME_SLOT_GET_ALL_BY_EMAIL)
-        .queryParam("email", email)
-        .toUriString();
-    Map<String, String> requestBody = new HashMap<>();
-    requestBody.put("email", email);
-    HttpEntity<Map<String, String>> request = generateRequest(requestBody);
+    Map<String, Object> user = findUserByEmail(email);
+    System.out.println("User Object: " + user);
 
+    if (user == null) {
+      return CompletableFuture.completedFuture(new Triple<>("User not found with the given email: " + email, false, null));
+    }
+
+    Integer userId = (Integer) user.get("uid");
+    if (userId == null) {
+      return CompletableFuture.completedFuture(new Triple<>("User ID is missing for the given email: " + email, false, null));
+    }
+
+
+    String url = apiConfig.baseApi + apiConfig.GET_TIMESLOTS_BY_USER_ID + userId;
+    System.out.println("API URL: " + url);
+
+    HttpEntity<Void> request = generateRequest();
 //     async
     return CompletableFuture.supplyAsync(() ->
         {
@@ -85,6 +137,7 @@ public class TimeSlotService {
         }
     );
   }
+
 
   private HttpEntity<Map<String, Object>> generateRequestobject(Map<String, Object> requestBody) {
     headers.add("apiKey", apiKey);
