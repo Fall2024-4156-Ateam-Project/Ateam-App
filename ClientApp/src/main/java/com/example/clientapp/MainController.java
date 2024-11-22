@@ -1,6 +1,10 @@
 package com.example.clientapp;
 
 
+import com.example.clientapp.util.CommonTypes.Day;
+import com.example.clientapp.util.LocalTimeAdapter;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.example.clientapp.apiService.TimeSlotService;
 import com.example.clientapp.apiService.UserService;
 import com.example.clientapp.user.AuthService;
@@ -13,11 +17,13 @@ import com.example.clientapp.util.JwtUtil;
 import com.example.clientapp.util.Pair;
 import com.example.clientapp.util.Triple;
 import com.example.clientapp.util.Util;
+import com.google.gson.Gson;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.net.URLEncoder;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.List;
@@ -317,7 +323,21 @@ public class MainController {
         model.addAttribute("error", result.getMessage());
         return "timeslots";
       }
-      model.addAttribute("timeSlots", result.getData());
+
+
+      Gson gson = new GsonBuilder()
+          .registerTypeAdapter(LocalTime.class, new LocalTimeAdapter())
+          .create();
+      List<TimeSlot> rawData = timeSlotService.getUserTimeSlots(doctorEmail).get().getData();
+      System.out.println("timeSlotsJson " + gson.toJson(result.getData()));
+      Map<Day, List<TimeSlot>> normalizedSlots = timeSlotService.normalizeTimeSlots(rawData);
+
+      System.out.println("timeSlotsJson " + gson.toJson(result.getData()));
+      model.addAttribute("timeSlotsJson", gson.toJson(normalizedSlots));
+
+      model.addAttribute("daysOfWeek", List.of("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"));
+
+      System.out.println(result.getData());
       return "timeslots";
     } catch (Exception e) {
       // Handle unexpected errors

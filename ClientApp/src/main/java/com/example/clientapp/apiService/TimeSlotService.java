@@ -1,12 +1,15 @@
 package com.example.clientapp.apiService;
 
 import com.example.clientapp.user.TimeSlot;
+import com.example.clientapp.util.CommonTypes.Day;
 import com.example.clientapp.util.Pair;
 import com.example.clientapp.util.Triple;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Time;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +87,38 @@ public class TimeSlotService {
           }
         }
     );
+  }
+
+
+  public Map<Day, List<TimeSlot>> normalizeTimeSlots(List<TimeSlot> timeSlots) {
+    Map<Day, List<TimeSlot>> result = new HashMap<>();
+    System.out.println("normalizeTimeSlots (initial): " + result);
+
+    for (TimeSlot slot : timeSlots) {
+      Day startDay = slot.getStartDay();
+      Day endDay = slot.getEndDay();
+
+      // Process each day in the range
+      for (Day currentDay = startDay; currentDay != null && currentDay.ordinal() <= endDay.ordinal(); currentDay = nextDay(currentDay)) {
+        System.out.println("Processing: " + currentDay);
+
+        LocalTime startTime = currentDay == startDay ? slot.getStartTime() : LocalTime.MIN;
+        LocalTime endTime = currentDay == endDay ? slot.getEndTime() : LocalTime.MAX;
+
+        result.putIfAbsent(currentDay, new ArrayList<>());
+        result.get(currentDay).add(new TimeSlot(startTime, endTime, currentDay, currentDay, slot.getAvailability()));
+
+        System.out.println("Added to " + currentDay + ": " + result.get(currentDay));
+      }
+    }
+    System.out.println("normalizeTimeSlots (final): " + result);
+    return result;
+  }
+
+  private Day nextDay(Day currentDay) {
+    Day[] days = Day.values();
+    int nextOrdinal = currentDay.ordinal() + 1;
+    return nextOrdinal < days.length ? days[nextOrdinal] : null; // Return null if there's no next day
   }
 
   private HttpEntity<Map<String, Object>> generateRequestobject(Map<String, Object> requestBody) {

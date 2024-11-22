@@ -3,31 +3,120 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Time Slots</title>
+  <title>Doctor Time Slots</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .day {
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 10px;
+      background-color: #f9f9f9;
+    }
+    .day-header {
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .hour {
+      height: 30px;
+      border: 1px solid #ddd;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hour.available {
+      background-color: #c8e6c9; /* Green for available */
+    }
+    .hour.busy {
+      background-color: #ffcdd2; /* Red for busy */
+    }
+    .hour.unavailable {
+      background-color: #e0e0e0; /* Gray for unavailable */
+    }
+  </style>
 </head>
 <body>
 <h1>Doctor Time Slots</h1>
-<!-- Display error if present -->
-<div th:if="${error}" style="color: red;">
-  <p th:text="${error}"></p>
-</div>
 
-<!-- Display time slots if available -->
-<div th:if="${timeSlots}">
-  <ul>
-    <li th:each="slot : ${timeSlots}">
-      <p><strong>Day:</strong> <span th:text="${slot.day}"></span></p>
-      <p><strong>Start Time:</strong> <span th:text="${slot.startTime}"></span></p>
-      <p><strong>End Time:</strong> <span th:text="${slot.endTime}"></span></p>
-      <p><strong>Availability:</strong> <span th:text="${slot.availability}"></span></p>
-      <hr>
-    </li>
-  </ul>
-</div>
+<div id="error-message" style="color: red;"></div>
+<div class="calendar" id="calendar"></div>
+<p>Raw JSON Data: <span th:text="${timeSlotsJson}"></span></p>
 
-<!-- Display message if no time slots -->
-<div th:if="${timeSlots == null || #lists.isEmpty(timeSlots)}">
-  <p>No time slots available.</p>
-</div>
+<script th:inline="javascript">
+  const timeSlotsRaw = /*[[${timeSlotsJson}]]*/;
+  const timeSlots = JSON.parse(timeSlotsRaw); // Parse the JSON into an object
+  console.log("Parsed TimeSlots:", timeSlots);
+</script>
+
+<script>
+  const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+  // Error handling
+  const errorMessage = ""; // Replace with dynamic error from server if available
+  if (errorMessage) {
+    document.getElementById("error-message").textContent = errorMessage;
+  }
+
+  // Convert time in "HH:mm:ss" format to hour as a number (0-23)
+  function timeToHour(timeString) {
+    return parseInt(timeString.split(":")[0], 10);
+  }
+
+  // Generate a 24-hour array for a day, defaulting to "unavailable"
+  function generateHourStatus(slots) {
+    const hours = new Array(24).fill("unavailable");
+
+    slots.forEach((slot) => {
+      const startHour = timeToHour(slot.startTime);
+      const endHour = timeToHour(slot.endTime);
+      const status = slot.availability === "available" ? "available" : "busy";
+
+      for (let hour = startHour; hour <= endHour; hour++) {
+        hours[hour] = status;
+      }
+    });
+
+    return hours;
+  }
+
+  // Render the calendar
+  const calendar = document.getElementById("calendar");
+
+  daysOfWeek.forEach((day) => {
+    const dayColumn = document.createElement("div");
+    dayColumn.classList.add("day");
+
+    // Add day header
+    const dayHeader = document.createElement("div");
+    dayHeader.classList.add("day-header");
+    dayHeader.textContent = day;
+    dayColumn.appendChild(dayHeader);
+
+    // Generate 24-hour statuses for the current day
+    const daySlots = timeSlots[day] || []; // Default to empty array if no slots exist for the day
+    const hourStatuses = generateHourStatus(daySlots);
+
+    // Render each hour block
+    hourStatuses.forEach((status, hour) => {
+      const hourDiv = document.createElement("div");
+      hourDiv.classList.add("hour", status); // Apply status as class
+      hourDiv.textContent = `${hour.toString().padStart(2, "0")}:00 - ${hour.toString().padStart(2, "0")}:59`;
+      dayColumn.appendChild(hourDiv);
+    });
+
+    // Append the day column to the calendar
+    calendar.appendChild(dayColumn);
+  });
+</script>
+
 </body>
 </html>
