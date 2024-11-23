@@ -73,7 +73,8 @@ public class TimeSlotService {
         {
           try {
 
-            ResponseEntity<String> rawResponse =restTemplate.exchange(url, HttpMethod.GET, request, String.class);
+            ResponseEntity<String> rawResponse = restTemplate.exchange(url, HttpMethod.GET, request,
+                String.class);
             List<TimeSlot> timeSlots = objectMapper.readValue(
                 rawResponse.getBody(), new TypeReference<List<TimeSlot>>() {
                 }
@@ -92,33 +93,34 @@ public class TimeSlotService {
 
   public Map<Day, List<TimeSlot>> normalizeTimeSlots(List<TimeSlot> timeSlots) {
     Map<Day, List<TimeSlot>> result = new HashMap<>();
-    System.out.println("normalizeTimeSlots (initial): " + result);
+//    System.out.println("normalizeTimeSlots (initial): " + result);
 
     for (TimeSlot slot : timeSlots) {
       Day startDay = slot.getStartDay();
       Day endDay = slot.getEndDay();
 
-      // Process each day in the range
-      for (Day currentDay = startDay; currentDay != null && currentDay.ordinal() <= endDay.ordinal(); currentDay = nextDay(currentDay)) {
-        System.out.println("Processing: " + currentDay);
+      for (Day currentDay = startDay;
+          currentDay != null && currentDay.ordinal() <= endDay.ordinal();
+          currentDay = nextDay(currentDay)) {
+//        System.out.println("Processing: " + currentDay);
 
         LocalTime startTime = currentDay == startDay ? slot.getStartTime() : LocalTime.MIN;
         LocalTime endTime = currentDay == endDay ? slot.getEndTime() : LocalTime.MAX;
 
         result.putIfAbsent(currentDay, new ArrayList<>());
-        result.get(currentDay).add(new TimeSlot(startTime, endTime, currentDay, currentDay, slot.getAvailability()));
+        result.get(currentDay)
+            .add(new TimeSlot(startTime, endTime, currentDay, currentDay, slot.getAvailability()));
 
-        System.out.println("Added to " + currentDay + ": " + result.get(currentDay));
+//        System.out.println("Added to " + currentDay + ": " + result.get(currentDay));
       }
     }
-    System.out.println("normalizeTimeSlots (final): " + result);
     return result;
   }
 
   private Day nextDay(Day currentDay) {
     Day[] days = Day.values();
     int nextOrdinal = currentDay.ordinal() + 1;
-    return nextOrdinal < days.length ? days[nextOrdinal] : null; // Return null if there's no next day
+    return nextOrdinal < days.length ? days[nextOrdinal] : null;
   }
 
   private HttpEntity<Map<String, Object>> generateRequestobject(Map<String, Object> requestBody) {
@@ -140,7 +142,8 @@ public class TimeSlotService {
 
       HttpEntity<Void> request = generateRequest();
 
-      ResponseEntity<List> response = restTemplate.exchange(url, HttpMethod.GET, request, List.class);
+      ResponseEntity<List> response = restTemplate.exchange(url, HttpMethod.GET, request,
+          List.class);
 
       System.out.println("Response Status: " + response.getStatusCode());
       System.out.println("Response Headers: " + response.getHeaders());
@@ -162,7 +165,8 @@ public class TimeSlotService {
     }
   }
 
-  public Pair<String, Boolean> createTimeslot(String email, String day, String startTime, String endTime, String availability) {
+  public Pair<String, Boolean> createTimeslot(String email, String startDay, String endDay,
+      String startTime, String endTime, String availability) {
 
     Map<String, Object> user = findUserByEmail(email);
     System.out.println("User Object: " + user);
@@ -174,10 +178,44 @@ public class TimeSlotService {
     String url = apiConfig.baseApi + apiConfig.TIMESLOTS;
     System.out.println("API URL: " + url);
 
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("user", user);
+    requestBody.put("startDay", startDay);
+    requestBody.put("endDay", endDay);
+    requestBody.put("startTime", startTime);
+    requestBody.put("endTime", endTime);
+    requestBody.put("availability", availability);
+
+    HttpEntity<Map<String, Object>> request = generateRequestobject(requestBody);
+    try {
+      ResponseEntity<String> rawResponse = restTemplate.postForEntity(url, request, String.class);
+      System.out.println("Response Body: " + rawResponse.getBody());
+      return new Pair<>(rawResponse.getBody(), true);
+    } catch (HttpClientErrorException | HttpServerErrorException e) {
+      System.out.println("Error Response Body: " + e.getResponseBodyAsString());
+      System.out.println("Error Response Status: " + e.getStatusCode());
+      return new Pair<>(e.getResponseBodyAsString(), false);
+    }
+  }
+
+
+  public Pair<String, Boolean> createTimeslotWithMerge(String email, String startDay, String endDay,
+      String startTime, String endTime, String availability) {
+
+    Map<String, Object> user = findUserByEmail(email);
+    System.out.println("User: " + user);
+
+    if (email == null) {
+      return new Pair<>("User not found with the given email: " + email, false);
+    }
+
+    String url = apiConfig.baseApi + apiConfig.TIMESLOTS_WITH_MERGE;
+//    System.out.println("API URL: " + url);
 
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("user", user);
-    requestBody.put("day", day);
+    requestBody.put("startDay", startDay);
+    requestBody.put("endDay", endDay);
     requestBody.put("startTime", startTime);
     requestBody.put("endTime", endTime);
     requestBody.put("availability", availability);

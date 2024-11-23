@@ -22,6 +22,8 @@ public class apiConfig {
 
   public static String TIMESLOTS = "/timeslots";
 
+  public static String TIMESLOTS_WITH_MERGE = "/timeslots/merge";
+
   public static String GET_TIMESLOTS_BY_USER_ID = "/timeslots/user/{uid}";
 
   public static String GET_TIMESLOTS_BY_DAY = "/timeslots/day/{day}";

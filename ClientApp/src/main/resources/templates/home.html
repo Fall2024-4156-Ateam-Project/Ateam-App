@@ -103,14 +103,14 @@
   <!-- Patient Toolbar -->
   <div th:if="${role == 'patient'}">
     <a href="/search">Search Doctor</a>
-    <a href="/view_schedule">My Schedule</a>
+    <a href="/view_my_timeslots">My Schedule</a>
     <a href="/view_requests">My Requests</a>
   </div>
 
   <!-- Doctor Toolbar -->
   <div th:if="${role == 'doctor'}">
     <a href="/search">Search Doctor</a>
-    <a href="/view_timeslots">View Time Slots</a>
+    <a href="/view_my_timeslots">View Time Slots</a>
     <a href="/timeslot_create_form">Create Time Slot</a>
     <a href="/view_schedule">My Schedule</a>
     <a href="/manage_appointments">Manage Appointments</a>
