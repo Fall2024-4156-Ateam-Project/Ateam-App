@@ -32,5 +32,8 @@ public class apiConfig {
 
   public static String DELETE_TIMESLOT_BY_ID = "/timeslots/{id}";
 
+  public static String GET_REQUEST = "/requests/search";
+
+  public static String REQUEST = "/requests";
 
 }

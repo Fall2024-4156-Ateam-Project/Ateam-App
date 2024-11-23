@@ -1,10 +1,12 @@
 package com.example.clientapp;
 
 
+import com.example.clientapp.apiService.RequestService;
 import com.example.clientapp.apiService.TimeSlotService;
 import com.example.clientapp.apiService.UserService;
 import com.example.clientapp.user.AuthService;
 import com.example.clientapp.user.Doctor;
+import com.example.clientapp.user.Request;
 import com.example.clientapp.user.TimeSlot;
 import com.example.clientapp.user.User;
 import com.example.clientapp.util.CommonTypes;
@@ -48,18 +50,21 @@ public class MainController {
 
   private final TimeSlotService timeSlotService;
 
+  private final RequestService requestService;
+
   private final JwtUtil jwtUtil;
 
   private final Util util;
 
   @Autowired
   public MainController(AuthService authService, JwtUtil jwtUtil, Util util,
-      UserService userService, TimeSlotService timeSlotService) {
+      UserService userService, TimeSlotService timeSlotService, RequestService requestService) {
     this.authService = authService;
     this.jwtUtil = jwtUtil;
     this.util = util;
     this.userService = userService;
     this.timeSlotService = timeSlotService;
+    this.requestService = requestService;
   }
 
   @GetMapping(value = "/")
@@ -350,6 +355,79 @@ public class MainController {
     } catch (Exception ex) {
       model.addAttribute("error", "An unexpected error occurred: " + ex.getMessage());
       return "timeslot_create_form";
+    }
+  }
+
+
+  @GetMapping("/my_requests")
+  public String getMyRequests(HttpServletRequest request, Model model) {
+    String email = util.getCookie("email", request);
+    String role = util.getCookie("role", request);
+//    if (!role.equals(Role.doctor)){
+//      return CompletableFuture.completedFuture( new ArrayList<>());
+//    }
+//    CompletableFuture<Triple<String, Boolean, List<TimeSlot>>>
+    try{
+      Triple<String, Boolean, List<Request>> result = requestService.getUserRequests(email).get();
+      if (!result.getStatus()){
+        model.addAttribute("error", result.getMessage());
+        return "requests";
+      }
+      model.addAttribute("requests", result.getData());
+      return "requests";
+    } catch (Exception e) {
+      // Handle unexpected errors
+      model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());
+      return "error"; // error page
+    }
+//    return timeSlotService.getUserTimeSlots(email);
+  }
+
+
+  @GetMapping("/patient_requests")
+  public String getPatientRequests(@RequestParam String tid, HttpServletRequest request, Model model) {
+    String email = util.getCookie("email", request);
+    String role = util.getCookie("role", request);
+//    if (!role.equals(Role.doctor)){
+//      return CompletableFuture.completedFuture( new ArrayList<>());
+//    }
+//    CompletableFuture<Triple<String, Boolean, List<TimeSlot>>>
+    try{
+      Triple<String, Boolean, List<Request>> result = requestService.getTimeslotRequests(tid).get();
+      if (!result.getStatus()){
+        model.addAttribute("error", result.getMessage());
+        return "requests";
+      }
+      model.addAttribute("requests", result.getData());
+      return "requests";
+    } catch (Exception e) {
+      // Handle unexpected errors
+      model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());
+      return "error"; // error page
+    }
+//    return timeSlotService.getUserTimeSlots(email);
+  }
+
+
+  @PostMapping("/request_create_form")
+  @ResponseBody
+  public String createRequest(@RequestParam String email,
+                               @RequestParam String tid,
+                               @RequestParam String description,
+                               @RequestParam String status,
+                               Model model) {
+    try {
+      Pair<String, Boolean> response = requestService.createRequest(email, tid, description, status);
+      System.out.println("Response: " + response.msg() + " Status: " + response.status());
+      if (!response.status()) {
+        model.addAttribute("error", response.msg());
+        return "request_create_form";
+      }
+      model.addAttribute("success", "Request created successfully.");
+      return "home";
+    } catch (Exception ex) {
+      model.addAttribute("error", "An unexpected error occurred: " + ex.getMessage());
+      return "request_create_form";
     }
   }
 }
