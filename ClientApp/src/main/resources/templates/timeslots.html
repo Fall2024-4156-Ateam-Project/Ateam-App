@@ -2,32 +2,217 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Time Slots</title>
+  <title>Doctor Time Slots</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    .calendar {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      overflow-x: auto;
+    }
+
+    .day {
+      position: relative;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      width: 120px;
+      background-color: #f9f9f9;
+    }
+
+    .day-header {
+      font-weight: bold;
+      text-align: center;
+      padding: 5px;
+      border-bottom: 1px solid #ddd;
+      background-color: #f0f0f0;
+    }
+
+    .day-timeline {
+      position: relative;
+      height: 1440px; /* 24 hours * 60 minutes = 1440px */
+      width: 100%;
+      box-sizing: border-box;
+      border-top: 1px solid #ccc;
+    }
+
+    /* Hour divisions */
+    .hour-division {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 60px; /* Each hour is 60 minutes */
+      box-sizing: border-box;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .hour-label {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      text-align: right;
+      font-size: 10px;
+      color: #999;
+      padding-right: 5px;
+      box-sizing: border-box;
+    }
+
+    .time-slot {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      background-color: rgba(76, 175, 80, 0.7); /* Green with transparency */
+      border: 1px solid #4CAF50;
+      box-sizing: border-box;
+    }
+
+    .time-slot.busy {
+      background-color: rgba(244, 67, 54, 0.7); /* Red with transparency */
+      border-color: #F44336;
+    }
+
+    .time-slot-label {
+      font-size: 12px;
+      padding: 2px;
+      text-align: center;
+    }
+
+    .current-time-indicator {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: blue;
+      z-index: 1;
+    }
+
+    /* Optional scrollbar styling */
+    .calendar::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .calendar::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    .calendar::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+
+    .calendar::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+  </style>
 </head>
 <body>
-<h1>Doctor Time Slots</h1>
-<!-- Display error if present -->
-<div th:if="${error}" style="color: red;">
-  <p th:text="${error}"></p>
-</div>
+<h1 th:text="${userEmail}"></h1>
+<div id="error-message" style="color: red;"></div>
+<div class="calendar" id="calendar"></div>
+<p>Raw JSON Data: <span th:text="${timeSlotsJson}"></span></p>
 
-<!-- Display time slots if available -->
-<div th:if="${timeSlots}">
-  <ul>
-    <li th:each="slot : ${timeSlots}">
-      <p><strong>Day:</strong> <span th:text="${slot.day}"></span></p>
-      <p><strong>Start Time:</strong> <span th:text="${slot.startTime}"></span></p>
-      <p><strong>End Time:</strong> <span th:text="${slot.endTime}"></span></p>
-      <p><strong>Availability:</strong> <span th:text="${slot.availability}"></span></p>
-      <hr>
-    </li>
-  </ul>
-</div>
+<script th:inline="javascript">
+  const timeSlotsRaw = /*[[${timeSlotsJson}]]*/;
+  const timeSlots = JSON.parse(timeSlotsRaw); // Parse the JSON into an object
+  console.log("Parsed TimeSlots:", timeSlots);
+</script>
 
-<!-- Display message if no time slots -->
-<div th:if="${timeSlots == null || #lists.isEmpty(timeSlots)}">
-  <p>No time slots available.</p>
-</div>
+<script>
+  const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+  // Error handling
+  const errorMessage = ""; // Replace with dynamic error from server if available
+  if (errorMessage) {
+    document.getElementById("error-message").textContent = errorMessage;
+  }
+
+  // Function to convert time string "HH:mm:ss" to minutes since midnight
+  function timeStringToMinutes(timeString) {
+    const [hours, minutes, seconds] = timeString.split(":").map(Number);
+    return hours * 60 + minutes + seconds / 60;
+  }
+
+  // Render the calendar
+  const calendar = document.getElementById("calendar");
+
+  daysOfWeek.forEach((day) => {
+    const dayColumn = document.createElement("div");
+    dayColumn.classList.add("day");
+
+    // Add day header
+    const dayHeader = document.createElement("div");
+    dayHeader.classList.add("day-header");
+    dayHeader.textContent = day;
+    dayColumn.appendChild(dayHeader);
+
+    // Day timeline
+    const dayTimeline = document.createElement("div");
+    dayTimeline.classList.add("day-timeline");
+
+    // Add hour divisions
+    for (let hour = 0; hour < 24; hour++) {
+      const hourDiv = document.createElement("div");
+      hourDiv.classList.add("hour-division");
+      hourDiv.style.top = `${(hour * 60 / 1440) * 100}%`;
+
+      // Hour label
+      const hourLabel = document.createElement("div");
+      hourLabel.classList.add("hour-label");
+      hourLabel.style.top = `${(hour * 60 / 1440) * 100}%`;
+      hourLabel.textContent = `${hour.toString().padStart(2, '0')}:00`;
+
+      dayTimeline.appendChild(hourDiv);
+      dayTimeline.appendChild(hourLabel);
+    }
+
+    // Render time slots
+    const daySlots = timeSlots[day] || [];
+
+    daySlots.forEach((slot) => {
+      const startMinutes = timeStringToMinutes(slot.startTime);
+      const endMinutes = timeStringToMinutes(slot.endTime);
+      const duration = endMinutes - startMinutes;
+
+      const timeSlotDiv = document.createElement("div");
+      timeSlotDiv.classList.add("time-slot");
+      if (slot.availability === "busy") {
+        timeSlotDiv.classList.add("busy");
+      }
+
+      // Set position and height proportional to time
+      timeSlotDiv.style.top = `${(startMinutes / 1440) * 100}%`;
+      timeSlotDiv.style.height = `${(duration / 1440) * 100}%`;
+
+      // Label inside the time slot
+      const label = document.createElement("div");
+      label.classList.add("time-slot-label");
+      label.textContent = `${slot.startTime} - ${slot.endTime}`;
+      timeSlotDiv.appendChild(label);
+
+      dayTimeline.appendChild(timeSlotDiv);
+    });
+
+    // Add current time indicator
+    const todayIndex = new Date().getDay(); // 0 (Sunday) to 6 (Saturday)
+    const adjustedTodayIndex = (todayIndex + 6) % 7; // Adjust to match array index (Monday=0)
+    if (day === daysOfWeek[adjustedTodayIndex]) {
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+
+      const currentTimeIndicator = document.createElement("div");
+      currentTimeIndicator.classList.add("current-time-indicator");
+      currentTimeIndicator.style.top = `${(currentMinutes / 1440) * 100}%`;
+
+      dayTimeline.appendChild(currentTimeIndicator);
+    }
+
+    dayColumn.appendChild(dayTimeline);
+    calendar.appendChild(dayColumn);
+  });
+</script>
+
 </body>
 </html>

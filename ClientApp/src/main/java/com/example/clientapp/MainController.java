@@ -1,17 +1,27 @@
 package com.example.clientapp;
 
 
+
+import com.example.clientapp.util.CommonTypes.Day;
+import com.example.clientapp.util.LocalTimeAdapter;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.example.clientapp.apiService.MeetingService;
 import com.example.clientapp.apiService.TimeSlotService;
 import com.example.clientapp.apiService.UserService;
 import com.example.clientapp.user.*;
 import com.example.clientapp.util.*;
 import com.example.clientapp.util.CommonTypes.Role;
+import com.example.clientapp.util.JwtUtil;
+import com.example.clientapp.util.Pair;
+import com.example.clientapp.util.Triple;
+import com.example.clientapp.util.Util;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.net.URLEncoder;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.List;
@@ -100,6 +110,7 @@ public class MainController {
   public String createTimeslotForm() {
     return "timeslot_create_form";
   }
+
   /**
    * Send login request
    *
@@ -300,47 +311,96 @@ public class MainController {
 //      return CompletableFuture.completedFuture( new ArrayList<>());
 //    }
 //    CompletableFuture<Triple<String, Boolean, List<TimeSlot>>>
-    try{
-      Triple<String, Boolean, List<TimeSlot>> result = timeSlotService.getUserTimeSlots(doctorEmail).get();
-      if (!result.getStatus()){
+    try {
+      Triple<String, Boolean, List<TimeSlot>> result = timeSlotService.getUserTimeSlots(doctorEmail)
+          .get();
+      if (!result.getStatus()) {
         model.addAttribute("error", result.getMessage());
         return "timeslots";
       }
-      model.addAttribute("timeSlots", result.getData());
+
+      Gson gson = new GsonBuilder()
+          .registerTypeAdapter(LocalTime.class, new LocalTimeAdapter())
+          .create();
+      List<TimeSlot> rawData = timeSlotService.getUserTimeSlots(doctorEmail).get().getData();
+      System.out.println("timeSlotsJson " + gson.toJson(result.getData()));
+      Map<Day, List<TimeSlot>> normalizedSlots = timeSlotService.normalizeTimeSlots(rawData);
+      model.addAttribute("timeSlotsJson", gson.toJson(normalizedSlots));
+      model.addAttribute("userEmail", doctorEmail);
+//      model.addAttribute("daysOfWeek",
+//          List.of("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"));
       return "timeslots";
     } catch (Exception e) {
-      // Handle unexpected errors
       model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());
-      return "error"; // error page
+      return "error";
     }
-//    return timeSlotService.getUserTimeSlots(email);
   }
 
 
   @PostMapping("/timeslot_create_form")
-  @ResponseBody
-  public String createTimeslot(@RequestParam String email,
-                               @RequestParam String day,
-                               @RequestParam String startTime,
-                               @RequestParam String endTime,
-                               @RequestParam String availability,
-                               Model model) {
-    System.out.println("email: "+email);
-    System.out.println("day: "+day);
+  public String createTimeslot(
+//      String email,
+      String startDay,
+      String endDay,
+      String startTime,
+      String endTime,
+      String availability,
+      HttpServletRequest request,
+      Model model) {
+    String email = util.getCookie("email", request);
+    System.out.println("email: " + email);
+    System.out.println("endday: " + endDay);
     try {
-      Pair<String, Boolean> response = timeSlotService.createTimeslot(email, day, startTime, endTime, availability);
+      Pair<String, Boolean> response = timeSlotService.createTimeslotWithMerge(email, startDay, endDay,
+          startTime,
+          endTime, availability);
       System.out.println("Response: " + response.msg() + " Status: " + response.status());
       if (!response.status()) {
         model.addAttribute("error", response.msg());
         return "timeslot_create_form";
       }
       model.addAttribute("success", "Timeslot created successfully.");
-      return "home";
+      return "redirect:/home";
     } catch (Exception ex) {
       model.addAttribute("error", "An unexpected error occurred: " + ex.getMessage());
       return "timeslot_create_form";
     }
   }
+
+
+
+  /**
+   * View current user timeslots
+   *
+   * @return
+   */
+  @GetMapping("/view_my_timeslots")
+  public String viewMyTimeSlot(HttpServletRequest request, Model model) {
+    String userEmail = util.getCookie("email", request);
+    try {
+      Triple<String, Boolean, List<TimeSlot>> result = timeSlotService.getUserTimeSlots(userEmail)
+          .get();
+      if (!result.getStatus()) {
+        model.addAttribute("error", result.getMessage());
+        return "timeslots";
+      }
+
+      Gson gson = new GsonBuilder()
+          .registerTypeAdapter(LocalTime.class, new LocalTimeAdapter())
+          .create();
+      List<TimeSlot> rawData = timeSlotService.getUserTimeSlots(userEmail).get().getData();
+      System.out.println("timeSlotsJson " + gson.toJson(result.getData()));
+      Map<Day, List<TimeSlot>> normalizedSlots = timeSlotService.normalizeTimeSlots(rawData);
+      model.addAttribute("timeSlotsJson", gson.toJson(normalizedSlots));
+      model.addAttribute("userEmail", userEmail);
+      return "timeslots";
+    } catch (Exception e) {
+      model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());
+      return "error";
+    }
+  }
+
+
 
   @GetMapping("/meeting_create_form")
   public String showCreateMeetingForm(HttpServletRequest request, Model model) {
