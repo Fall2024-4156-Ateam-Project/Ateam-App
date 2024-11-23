@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Create Timeslot</title>
   <style>
-    /* Basic styling for the page */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -14,9 +13,9 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      min-height: 100vh;
     }
 
-    /* Main container styling */
     .form-container {
       text-align: center;
       padding: 2rem;
@@ -24,20 +23,36 @@
       border-radius: 8px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
       max-width: 400px;
+      width: 90%;
       margin-top: 2rem;
     }
 
     h2 {
       color: #333;
+      margin-bottom: 1rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      color: #555;
     }
 
     .form-input {
       width: 100%;
       padding: 0.7rem;
-      margin: 10px 0;
+      margin: 0;
       border: 1px solid #ccc;
       border-radius: 5px;
       font-size: 14px;
+      transition: border-color 0.3s ease;
     }
 
     .form-input:focus {
@@ -46,7 +61,7 @@
     }
 
     .button {
-      margin-top: 1.5rem;
+      margin-top: 1rem;
       padding: 0.7rem 1.5rem;
       background-color: #4CAF50;
       color: white;
@@ -54,6 +69,8 @@
       border-radius: 5px;
       border: none;
       cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
     }
 
     .button:hover {
@@ -63,47 +80,84 @@
     .error-message {
       color: red;
       margin-bottom: 15px;
+      text-align: center;
     }
 
     .success-message {
       color: green;
       margin-bottom: 15px;
+      text-align: center;
     }
   </style>
 </head>
 <body>
 
-<!-- Main content -->
 <div class="form-container">
   <h2>Create Timeslot</h2>
-
-  <!-- Display error or success messages -->
   <div id="resultMessage" class="error-message"></div>
-
-  <!-- Timeslot creation form -->
   <form action="/timeslot_create_form" method="POST">
-    <select class="form-input" name="day" required >
-      <option value="Monday">Monday</option>
-      <option value="Tuesday">Tuesday</option>
-      <option value="Wednesday">Wednesday</option>
-      <option value="Thursday">Thursday</option>
-      <option value="Friday">Friday</option>
-      <option value="Saturday">Saturday</option>
-      <option value="Sunday">Sunday</option>
-    <input class="form-input" type="time" name="startTime" required />
-    <input class="form-input" type="time" name="endTime" required />
-    <select class="form-input" name="availability" required>
-      <option value="available">Available</option>
-      <option value="busy">Busy</option>
-    </select>
+    <div class="form-group">
+      <label for="startDay" class="form-label">Start Day</label>
+      <select id="startDay" class="form-input" name="startDay" required>
+        <option value="Monday">Monday</option>
+        <option value="Tuesday">Tuesday</option>
+        <option value="Wednesday">Wednesday</option>
+        <option value="Thursday">Thursday</option>
+        <option value="Friday">Friday</option>
+        <option value="Saturday">Saturday</option>
+        <option value="Sunday">Sunday</option>
+      </select>
+    </div>
 
-    <button class="button" type="submit">Create Timeslot</button>
+    <div class="form-group">
+      <label for="startTime" class="form-label">Start Time</label>
+      <input id="startTime" class="form-input" type="time" name="startTime" required/>
+    </div>
+
+    <div class="form-group">
+      <label for="endDay" class="form-label">End Day</label>
+      <select id="endDay" class="form-input" name="endDay" required>
+        <option value="Monday">Monday</option>
+        <option value="Tuesday">Tuesday</option>
+        <option value="Wednesday">Wednesday</option>
+        <option value="Thursday">Thursday</option>
+        <option value="Friday">Friday</option>
+        <option value="Saturday">Saturday</option>
+        <option value="Sunday">Sunday</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="endTime" class="form-label">End Time</label>
+      <input id="endTime" class="form-input" type="time" name="endTime" required/>
+    </div>
+
+    <div class="form-group">
+      <label for="availability" class="form-label">Availability</label>
+      <select id="availability" class="form-input" name="availability" required>
+        <option value="available">Available</option>
+        <option value="busy">Busy</option>
+      </select>
+    </div>
+
+    <button id="createButton" class="button" type="submit">Create Timeslot</button>
   </form>
 </div>
 
-<!-- Correct Thymeleaf link for JS -->
-<script th:src="@{/js/create_timeslot.js}"></script>
-<!--<script src="../static/js/create_timeslot.js"></script>-->
+<script>
+  document.getElementById("createButton").addEventListener("click", (event) => {
+    const resultMessage = document.getElementById("resultMessage");
+    resultMessage.textContent = ""; // Clear previous messages
+
+    const startTime = document.getElementById("startTime").value;
+    const endTime = document.getElementById("endTime").value;
+
+    if (endTime <= startTime) {
+      event.preventDefault();
+      resultMessage.textContent = "End time must be later than start time.";
+    }
+  });
+</script>
 
 </body>
 </html>
