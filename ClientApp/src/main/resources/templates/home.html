@@ -1,3 +1,4 @@
+<!-- home.html -->
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
@@ -5,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Home Page</title>
   <style>
-    /* Basic styling for the home page */
+    /* Existing styles */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -90,7 +91,7 @@
 <div class="home-container">
   <h1>Welcome to Your Dashboard</h1>
   <p>Welcome back, <span class="name" th:text="${role}">[Role]</span> <span class="name"
-                                                                                 th:text="${name}">[User Name]</span>!
+                                                                            th:text="${name}">[User Name]</span>!
   </p>
   <p>We're glad to see you again.</p>
   <form action="/logout_request" method="post">
@@ -114,8 +115,11 @@
     <a href="/timeslot_create_form">Create Time Slot</a>
     <a href="/view_schedule">My Schedule</a>
     <a href="/manage_appointments">Manage Appointments</a>
+    <!-- Add Create Meeting Button -->
+    <a href="/meeting_create_form" class="button">Create Meeting</a>
   </div>
 </div>
+
 <script>
   function getCookie(name) {
     let value = `; ${document.cookie}`;
@@ -133,7 +137,7 @@
     }
     return null;
   }
-  
+
   console.log('Email Cookie:', getCookieWithUTF8('email')); // Check if email cookie is available
   console.log('Name Cookie:', getCookieWithUTF8('name'));   // Check if name cookie is available
   console.log('Role Cookie:', getCookieWithUTF8('role'));   // Check if role cookie is available

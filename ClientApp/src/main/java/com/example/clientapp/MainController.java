@@ -1,23 +1,21 @@
 package com.example.clientapp;
 
 
+
 import com.example.clientapp.util.CommonTypes.Day;
 import com.example.clientapp.util.LocalTimeAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.example.clientapp.apiService.MeetingService;
 import com.example.clientapp.apiService.TimeSlotService;
 import com.example.clientapp.apiService.UserService;
-import com.example.clientapp.user.AuthService;
-import com.example.clientapp.user.Doctor;
-import com.example.clientapp.user.TimeSlot;
-import com.example.clientapp.user.User;
-import com.example.clientapp.util.CommonTypes;
+import com.example.clientapp.user.*;
+import com.example.clientapp.util.*;
 import com.example.clientapp.util.CommonTypes.Role;
 import com.example.clientapp.util.JwtUtil;
 import com.example.clientapp.util.Pair;
 import com.example.clientapp.util.Triple;
 import com.example.clientapp.util.Util;
-import com.google.gson.Gson;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -34,15 +32,7 @@ import org.springframework.boot.Banner.Mode;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.WebUtils;
 
 @Controller
@@ -54,18 +44,21 @@ public class MainController {
 
   private final TimeSlotService timeSlotService;
 
+  private MeetingService meetingService;
+
   private final JwtUtil jwtUtil;
 
   private final Util util;
 
   @Autowired
   public MainController(AuthService authService, JwtUtil jwtUtil, Util util,
-      UserService userService, TimeSlotService timeSlotService) {
+      UserService userService, TimeSlotService timeSlotService, MeetingService meetingService) {
     this.authService = authService;
     this.jwtUtil = jwtUtil;
     this.util = util;
     this.userService = userService;
     this.timeSlotService = timeSlotService;
+    this.meetingService = meetingService;
   }
 
   @GetMapping(value = "/")
@@ -375,6 +368,7 @@ public class MainController {
   }
 
 
+
   /**
    * View current user timeslots
    *
@@ -407,4 +401,50 @@ public class MainController {
   }
 
 
+
+  @GetMapping("/meeting_create_form")
+  public String showCreateMeetingForm(HttpServletRequest request, Model model) {
+    String role = util.getCookie("role", request);
+    if (!role.equalsIgnoreCase("doctor")) {
+      model.addAttribute("error", "Unauthorized access.");
+      return "error";
+    }
+    return "meeting_create_form"; // Thymeleaf template for creating meetings
+  }
+
+  @PostMapping("/create_meeting")
+  public String createMeeting(@ModelAttribute Meeting meeting, HttpServletRequest request, Model model) {
+    String organizerEmail = util.getCookie("email", request); // Retrieve organizer's email from cookie
+
+    if (organizerEmail == null || organizerEmail.isEmpty()) {
+      model.addAttribute("error", "Organizer email is missing.");
+      return "meeting_create_form";
+    }
+
+    // Set the organizer's email
+    meeting.setOrganizerEmail(organizerEmail);
+
+    // Ensure participantEmail is provided
+    if (meeting.getParticipantEmail() == null || meeting.getParticipantEmail().isEmpty()) {
+      model.addAttribute("error", "Participant email is required.");
+      return "meeting_create_form";
+    }
+
+    // Proceed to create the meeting
+    CompletableFuture<MeetingResponse> responseFuture = meetingService.createMeeting(meeting);
+
+    try {
+      MeetingResponse response = responseFuture.get();
+      if (response.isStatus()) {
+        model.addAttribute("success", response.getMessage());
+        return "redirect:/meetings";
+      } else {
+        model.addAttribute("error", response.getMessage());
+        return "meeting_create_form";
+      }
+    } catch (Exception e) {
+      model.addAttribute("error", "Error creating meeting.");
+      return "meeting_create_form";
+    }
+  }
 }

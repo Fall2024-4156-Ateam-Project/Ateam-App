@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Meeting</title>
+    <style>
+        /* Your existing styles */
+        .form-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        select,
+        textarea,
+        input[type="datetime-local"] {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 0.7rem 1.5rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .error-message,
+        .success-message {
+            color: red;
+            margin-bottom: 1rem;
+        }
+
+        .success-message {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <h2>Create a New Meeting</h2>
+
+    <!-- Display success or error messages -->
+    <div th:if="${success}" class="success-message">
+        <p th:text="${success}"></p>
+    </div>
+    <div th:if="${error}" class="error-message">
+        <p th:text="${error}"></p>
+    </div>
+
+    <form th:action="@{/create_meeting}" method="post">
+
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" rows="4" required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="recurrence">Recurrence:</label>
+            <select name="recurrence" id="recurrence" required>
+                <option value="">--Select--</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="none">None</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="type">Type:</label>
+            <select name="type" id="type" required>
+                <option value="">--Select--</option>
+                <option value="group">Group</option>
+                <option value="one_on_one">One-on-One</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="participantEmail">Participant Email:</label>
+            <input type="email" id="participantEmail" name="participantEmail" required>
+        </div>
+
+        <div class="form-group">
+            <label for="startTime">Start Time:</label>
+            <input type="datetime-local" id="startTime" name="startTime" required>
+        </div>
+
+        <div class="form-group">
+            <label for="endTime">End Time:</label>
+            <input type="datetime-local" id="endTime" name="endTime" required>
+        </div>
+
+        <div class="form-group">
+            <label for="status">Status:</label>
+            <select name="status" id="status" required>
+                <option value="">--Select--</option>
+                <option value="Valid">Valid</option>
+                <option value="Invalid">Invalid</option>
+            </select>
+        </div>
+
+        <button type="submit">Create Meeting</button>
+    </form>
+</div>
+
+</body>
+</html>
