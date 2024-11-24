@@ -3,6 +3,7 @@ package com.example.clientapp.apiService;
 
 import com.example.clientapp.util.Pair;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,4 +56,42 @@ public class UserService {
     }
 
   }
+
+  private HttpEntity<Void> generateRequest() {
+    headers.add("apiKey", apiKey);
+    return new HttpEntity<>(headers);
+  }
+
+  public Map<String, Object> findUserById(String id) {
+    String url = apiConfig.baseApi + apiConfig.USER_FIND_BY_ID + "?Id=" + id;
+    System.out.println("Request URL: " + url);
+
+    try {
+
+      HttpEntity<Void> request = generateRequest();
+
+      ResponseEntity<List> response = restTemplate.exchange(url, HttpMethod.GET, request,
+          List.class);
+
+      System.out.println("Response Status: " + response.getStatusCode());
+      System.out.println("Response Headers: " + response.getHeaders());
+
+      List<Map<String, Object>> responseBody = response.getBody();
+      if (responseBody != null && !responseBody.isEmpty()) {
+
+        System.out.println("Response Body: " + responseBody.get(0));
+        return responseBody.get(0);
+      } else {
+        System.out.println("No users found.");
+        return null;
+      }
+    } catch (HttpClientErrorException | HttpServerErrorException e) {
+
+      System.out.println("Error Response Body: " + e.getResponseBodyAsString());
+      System.out.println("Error Response Status: " + e.getStatusCode());
+      return null;
+    }
+  }
+
+
 }

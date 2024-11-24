@@ -54,6 +54,20 @@
       display: block;
       text-align: center;
     }
+    .button {
+      margin-top: 1.5rem;
+      padding: 0.7rem 1.5rem;
+      background-color: #4CAF50;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .button:hover {
+      background-color: #45a049;
+    }
   </style>
 </head>
 <body>
@@ -88,6 +102,14 @@
     </tr>
     </tbody>
   </table>
+  <br>
+  <div th:if="${role == 'patient'}">
+    <a th:href="@{'/request_form?tid=' + ${tid}}" class="button">Create Request</a>
+  </div>
+
+  <div th:if="${role != 'patient'}">
+    <a th:href="@{'/patient_requests?tid=' + ${tid}}" class="button">View Requests</a>
+  </div>
 
 
   <!-- Form to Modify TimeSlot Details -->

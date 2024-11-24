@@ -12,6 +12,7 @@ public class TimeSlot {
 
   private LocalTime startTime;
   private LocalTime endTime;
+  private int tid;
 
   public User getUser() {
     return user;
@@ -30,8 +31,6 @@ public class TimeSlot {
   public void setTid(int tid) {
     this.tid = tid;
   }
-
-  private int tid;
 
   public int getUid() {
     return uid;

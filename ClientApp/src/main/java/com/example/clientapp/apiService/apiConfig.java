@@ -8,6 +8,7 @@ public class apiConfig {
   public static String USER_DELETE = "/users/delete";
   public static String USER_FIND_BY_NAME = "/users/findByName";
   public static String USER_FIND_BY_EMAIL = "/users/findByEmail";
+  public static String USER_FIND_BY_ID = "/users/findById";
   public static String USER_GET_ALL = "/users/get_all";
 
   public final static String TIME_SLOT_GET_ALL_BY_EMAIL = "/timeslots/user";
@@ -26,6 +27,10 @@ public class apiConfig {
   public static String UPDATE_TIMESLOTS_BY_AVAILABILITY = "/timeslots/availability/{availability}";
   public static String UPDATE_TIMESLOT_BY_ID = "/timeslots/{id}";
   public static String DELETE_TIMESLOT_BY_ID = "/timeslots/{id}";
+
+  public static String GET_REQUEST = "/requests/search";
+
+  public static String REQUEST = "/requests";
 
   public static String MEETINGS_SAVE = "/meetings/saveMeeting";
   public static String MEETINGS_GET_ALL = "/meetings/get_all";

@@ -1,8 +1,10 @@
 package com.example.clientapp;
 
 
+import com.example.clientapp.apiService.RequestService;
+import com.example.clientapp.apiService.TimeSlotService;
+import com.example.clientapp.apiService.UserService;
 import com.example.clientapp.util.CommonTypes.Day;
-import com.example.clientapp.util.LocalTimeAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.example.clientapp.apiService.MeetingService;
@@ -11,10 +13,7 @@ import com.example.clientapp.apiService.UserService;
 import com.example.clientapp.user.*;
 import com.example.clientapp.util.*;
 import com.example.clientapp.util.CommonTypes.Role;
-import com.example.clientapp.util.JwtUtil;
-import com.example.clientapp.util.Pair;
-import com.example.clientapp.util.Triple;
-import com.example.clientapp.util.Util;
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -48,6 +47,7 @@ public class MainController {
 
   private final TimeSlotService timeSlotService;
 
+  private final RequestService requestService;
   private MeetingService meetingService;
 
   private final JwtUtil jwtUtil;
@@ -56,12 +56,13 @@ public class MainController {
 
   @Autowired
   public MainController(AuthService authService, JwtUtil jwtUtil, Util util,
-      UserService userService, TimeSlotService timeSlotService, MeetingService meetingService) {
+      UserService userService, TimeSlotService timeSlotService, RequestService requestService, MeetingService meetingService) {
     this.authService = authService;
     this.jwtUtil = jwtUtil;
     this.util = util;
     this.userService = userService;
     this.timeSlotService = timeSlotService;
+    this.requestService = requestService;
     this.meetingService = meetingService;
   }
 
@@ -327,6 +328,8 @@ public class MainController {
       List<TimeSlot> rawData = result.getData();
       System.out.println("timeSlotsJson " + gson.toJson(result.getData()));
       Map<Day, List<TimeSlot>> normalizedSlots = timeSlotService.normalizeTimeSlots(rawData);
+      // print raw data to see the tid
+      System.out.println(rawData);
       model.addAttribute("timeSlotsJson", gson.toJson(normalizedSlots));
       model.addAttribute("userEmail", doctorEmail);
 
@@ -370,6 +373,90 @@ public class MainController {
   }
 
 
+  @GetMapping("/my_requests")
+  public String getMyRequests(HttpServletRequest request, Model model) {
+    String email = util.getCookie("email", request);
+    String role = util.getCookie("role", request);
+//    if (!role.equals(Role.doctor)){
+//      return CompletableFuture.completedFuture( new ArrayList<>());
+//    }
+//    CompletableFuture<Triple<String, Boolean, List<TimeSlot>>>
+    try{
+      Triple<String, Boolean, List<Request>> result = requestService.getUserRequests(email).get();
+      if (!result.getStatus()){
+        model.addAttribute("error", result.getMessage());
+        return "requests";
+      }
+      model.addAttribute("requests", result.getData());
+      for (Request req : result.getData()) {
+      }
+      return "requests";
+    } catch (Exception e) {
+      // Handle unexpected errors
+      model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());
+      return "error"; // error page
+    }
+//    return timeSlotService.getUserTimeSlots(email);
+  }
+
+
+  @GetMapping("/patient_requests")
+  public String getPatientRequests(@RequestParam String tid, HttpServletRequest request, Model model) {
+    String email = util.getCookie("email", request);
+    String role = util.getCookie("role", request);
+//    if (!role.equals(Role.doctor)){
+//      return CompletableFuture.completedFuture( new ArrayList<>());
+//    }
+//    CompletableFuture<Triple<String, Boolean, List<TimeSlot>>>
+    try{
+      Triple<String, Boolean, List<Request>> result = requestService.getTimeslotRequests(tid).get();
+      if (!result.getStatus()){
+        model.addAttribute("error", result.getMessage());
+        return "requests";
+      }
+      model.addAttribute("requests", result.getData());
+      return "requests";
+    } catch (Exception e) {
+      // Handle unexpected errors
+      model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());
+      return "error"; // error page
+    }
+//    return timeSlotService.getUserTimeSlots(email);
+  }
+
+
+
+  @GetMapping("/request_form")
+  public String gotoRequestCreate(Model model, @RequestParam String tid, HttpServletRequest request) {
+    model.addAttribute("tid", tid);
+    String email = util.getCookie("email", request);
+    model.addAttribute("email", email);
+    return "request_create_form";
+  }
+
+
+  @PostMapping("/request_create_form")
+  @ResponseBody
+  public String createRequest(String email,
+                               String tid,
+                               String description,
+                               String status,
+                               Model model) {
+    try {
+      Pair<String, Boolean> response = requestService.createRequest(email, tid, description, status);
+      System.out.println("Response: " + response.msg() + " Status: " + response.status());
+      if (!response.status()) {
+        model.addAttribute("error", response.msg());
+        return "request_create_form";
+      }
+      model.addAttribute("success", "Request created successfully.");
+      return "home";
+    } catch (Exception ex) {
+      model.addAttribute("error", "An unexpected error occurred: " + ex.getMessage());
+      return "request_create_form";
+    }
+  }
+
   /**
    * View current user timeslots
    *
@@ -405,6 +492,8 @@ public class MainController {
       model.addAttribute("days", Arrays.asList("Monday", "Tuesday", "Wednesday",
           "Thursday", "Friday", "Saturday", "Sunday"));
       model.addAttribute("currentUserEmail", util.getCookie("email", request));
+      model.addAttribute("role", util.getCookie("role", request));
+      model.addAttribute("tid", tid);
       model.addAttribute("timeSlotUserEmail", result.getData().getUser().getEmail());
       model.addAttribute("currentUserRole", util.getCookie("role", request));
       return "timeslots_detail";
