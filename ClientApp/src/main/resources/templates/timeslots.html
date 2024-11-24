@@ -123,7 +123,7 @@
 <p>Raw JSON Data: <span th:text="${timeSlotsJson}"></span></p>
 
 <script th:inline="javascript">
-  const timeSlotsRaw = /*[[${timeSlotsJson}]]*/;
+  const timeSlotsRaw = /*[[${timeSlotsJson}]]*/ {};
   const timeSlots = JSON.parse(timeSlotsRaw); // Parse the JSON into an object
   console.log("Parsed TimeSlots:", timeSlots);
 </script>

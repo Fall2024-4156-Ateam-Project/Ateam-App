@@ -140,6 +140,10 @@
     </form>
   </div>
 
+
+  <button id="remove" th:if="${currentUserEmail == timeSlotUserEmail}" >
+    Remove this time slot
+  </button>
   <a class="back-link" href="/home">Back to Home</a>
 </div>
 
@@ -150,6 +154,8 @@
 
   const startDaySelect = document.getElementById("startDaySelect");
   const endDaySelect = document.getElementById("endDaySelect");
+
+  const removeButton = document.getElementById("remove");
 
   // Initialize dropdowns with hidden input values
   startDaySelect.value = hiddenStartDay.value;
@@ -163,6 +169,29 @@
   endDaySelect.addEventListener("change", () => {
     hiddenEndDay.value = endDaySelect.value;
   });
+
+
+  removeButton.addEventListener("click", () => {
+    const tid = hiddenStartDay.closest("form").querySelector("[name='tid']").value;
+    if (confirm("Are you sure you want to remove this time slot?")) {
+      fetch(`/timeSlot/remove?tid=${tid}`, {
+        method: "DELETE",
+      })
+      .then((response) => {
+        if (response.ok) {
+          alert(response.body.toString());
+        } else {
+          alert("Failed to remove time slot.");
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert("An unexpected error occurred.");
+      });
+    }
+  });
+
+
 </script>
 </body>
 </html>

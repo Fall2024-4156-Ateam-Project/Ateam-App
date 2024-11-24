@@ -31,10 +31,12 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.view.RedirectView;
 import org.springframework.web.util.WebUtils;
 
 @Controller
@@ -312,6 +314,7 @@ public class MainController {
     try {
       Triple<String, Boolean, List<TimeSlot>> result = timeSlotService.getUserTimeSlots(doctorEmail)
           .get();
+      System.out.println("result result time"+ result.getMessage());
       if (!result.getStatus()) {
         model.addAttribute("error", result.getMessage());
         return "timeslots";
@@ -321,7 +324,7 @@ public class MainController {
           .registerTypeAdapter(LocalTime.class, new LocalTimeAdapter())
           .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
           .create();
-      List<TimeSlot> rawData = timeSlotService.getUserTimeSlots(doctorEmail).get().getData();
+      List<TimeSlot> rawData = result.getData();
       System.out.println("timeSlotsJson " + gson.toJson(result.getData()));
       Map<Day, List<TimeSlot>> normalizedSlots = timeSlotService.normalizeTimeSlots(rawData);
       model.addAttribute("timeSlotsJson", gson.toJson(normalizedSlots));
@@ -406,7 +409,8 @@ public class MainController {
       model.addAttribute("currentUserRole", util.getCookie("role", request));
       return "timeslots_detail";
     } catch (Exception e) {
-      redirectAttributes.addFlashAttribute("error", "An unexpected error occurred: " + e.getMessage());
+      redirectAttributes.addFlashAttribute("error",
+          "An unexpected error occurred: " + e.getMessage());
       return "redirect:/home";
     }
   }
@@ -452,6 +456,36 @@ public class MainController {
       return "redirect:/home";
     }
   }
+
+
+  @DeleteMapping("/timeSlot/remove")
+  public RedirectView removeTimeSlot(Model model, @RequestParam int tid, HttpServletRequest request,
+      RedirectAttributes redirectAttributes) {
+    String email = util.getCookie("email", request);
+    RedirectView redirectView = new RedirectView();
+    try {
+      Pair<String, Boolean> result = timeSlotService.removeTimeSlot(tid, email);
+      System.out.println("result" + result);
+      if (!result.status()) {
+        redirectAttributes.addFlashAttribute("error", result.msg());
+        redirectView.setUrl("/home");
+      } else {
+        redirectAttributes.addFlashAttribute("success", "TimeSlot removed successfully!");
+        redirectView.setUrl("/view_my_timeslots");
+      }
+      redirectView.setStatusCode(HttpStatus.SEE_OTHER); // Explicitly set to 303
+      return redirectView;
+
+    } catch (Exception e) {
+      redirectAttributes.addFlashAttribute("error",
+          "An unexpected error occurred: " + e.getMessage());
+      redirectView.setUrl("/home");
+      redirectView.setStatusCode(HttpStatus.SEE_OTHER); // Explicitly set to 303
+      return redirectView;
+    }
+
+  }
+
 
   @GetMapping("/meeting_create_form")
   public String showCreateMeetingForm(HttpServletRequest request, Model model) {

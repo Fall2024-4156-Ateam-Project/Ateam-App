@@ -75,6 +75,8 @@ public class TimeSlotService {
 
             ResponseEntity<String> rawResponse = restTemplate.exchange(url, HttpMethod.GET, request,
                 String.class);
+            System.out.println("rawResponse.getBody()" + rawResponse.getBody());
+
             List<TimeSlot> timeSlots = objectMapper.readValue(
                 rawResponse.getBody(), new TypeReference<List<TimeSlot>>() {
                 }
@@ -149,6 +151,33 @@ public class TimeSlotService {
       return new Pair<>(e.getResponseBodyAsString(), false);
     }
   }
+
+  public Pair<String, Boolean> removeTimeSlot(int tid, String email) {
+    if (!this.getTimeSlot(tid).join().getData().getUser().getEmail().equals(email)) {
+      return new Pair<>("Not authorized", false);
+    }
+    String url = UriComponentsBuilder.fromHttpUrl(
+            apiConfig.baseApi + apiConfig.TIMESLOTS_REMOVE + "/" + tid)
+        .toUriString();
+    Map<String, String> requestBody = new HashMap<>();
+    HttpEntity<Map<String, String>> request = generateRequest(requestBody);
+    try {
+      ResponseEntity<String> rawResponse = restTemplate.exchange(
+          url,
+          HttpMethod.DELETE,
+          request,
+          String.class
+      );
+      System.out.println("Response Body: " + rawResponse.getBody());
+      return new Pair<>(rawResponse.getBody(), true);
+    } catch (HttpClientErrorException | HttpServerErrorException e) {
+      System.out.println("Error Response Body: " + e.getResponseBodyAsString());
+      System.out.println("Error Response Status: " + e.getStatusCode());
+      return new Pair<>(e.getResponseBodyAsString(), false);
+    }
+
+  }
+
 
   public Map<Day, List<TimeSlot>> normalizeTimeSlots(List<TimeSlot> timeSlots) {
     Map<Day, List<TimeSlot>> result = new HashMap<>();
