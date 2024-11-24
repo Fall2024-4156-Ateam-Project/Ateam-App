@@ -192,6 +192,12 @@
       label.textContent = `${slot.startTime} - ${slot.endTime}`;
       timeSlotDiv.appendChild(label);
 
+      timeSlotDiv.addEventListener("click", () => {
+        // check if user is doc or patient, if patient create, if doc request list
+        //${slot.tid}
+        window.location.href = `http://localhost:9000/my_requests`; //TODO: get the requests related to it
+      });
+
       dayTimeline.appendChild(timeSlotDiv);
     });
 

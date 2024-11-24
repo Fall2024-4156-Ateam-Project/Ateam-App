@@ -1,20 +1,10 @@
 package com.example.clientapp;
 
 
-<<<<<<< HEAD
 import com.example.clientapp.apiService.RequestService;
 import com.example.clientapp.apiService.TimeSlotService;
 import com.example.clientapp.apiService.UserService;
-import com.example.clientapp.user.AuthService;
-import com.example.clientapp.user.Doctor;
-import com.example.clientapp.user.Request;
-import com.example.clientapp.user.TimeSlot;
-import com.example.clientapp.user.User;
-import com.example.clientapp.util.CommonTypes;
-=======
-
 import com.example.clientapp.util.CommonTypes.Day;
-import com.example.clientapp.util.LocalTimeAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.example.clientapp.apiService.MeetingService;
@@ -22,12 +12,8 @@ import com.example.clientapp.apiService.TimeSlotService;
 import com.example.clientapp.apiService.UserService;
 import com.example.clientapp.user.*;
 import com.example.clientapp.util.*;
->>>>>>> e2c922336529ba0d5435f8097b9e4d43229fc572
 import com.example.clientapp.util.CommonTypes.Role;
-import com.example.clientapp.util.JwtUtil;
-import com.example.clientapp.util.Pair;
-import com.example.clientapp.util.Triple;
-import com.example.clientapp.util.Util;
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -56,11 +42,8 @@ public class MainController {
 
   private final TimeSlotService timeSlotService;
 
-<<<<<<< HEAD
   private final RequestService requestService;
-=======
   private MeetingService meetingService;
->>>>>>> e2c922336529ba0d5435f8097b9e4d43229fc572
 
   private final JwtUtil jwtUtil;
 
@@ -68,21 +51,14 @@ public class MainController {
 
   @Autowired
   public MainController(AuthService authService, JwtUtil jwtUtil, Util util,
-<<<<<<< HEAD
-      UserService userService, TimeSlotService timeSlotService, RequestService requestService) {
-=======
-      UserService userService, TimeSlotService timeSlotService, MeetingService meetingService) {
->>>>>>> e2c922336529ba0d5435f8097b9e4d43229fc572
+      UserService userService, TimeSlotService timeSlotService, RequestService requestService, MeetingService meetingService) {
     this.authService = authService;
     this.jwtUtil = jwtUtil;
     this.util = util;
     this.userService = userService;
     this.timeSlotService = timeSlotService;
-<<<<<<< HEAD
     this.requestService = requestService;
-=======
     this.meetingService = meetingService;
->>>>>>> e2c922336529ba0d5435f8097b9e4d43229fc572
   }
 
   @GetMapping(value = "/")
@@ -349,6 +325,8 @@ public class MainController {
       List<TimeSlot> rawData = timeSlotService.getUserTimeSlots(doctorEmail).get().getData();
       System.out.println("timeSlotsJson " + gson.toJson(result.getData()));
       Map<Day, List<TimeSlot>> normalizedSlots = timeSlotService.normalizeTimeSlots(rawData);
+      // print raw data to see the tid
+      System.out.println(rawData);
       model.addAttribute("timeSlotsJson", gson.toJson(normalizedSlots));
       model.addAttribute("userEmail", doctorEmail);
 //      model.addAttribute("daysOfWeek",
@@ -407,6 +385,14 @@ public class MainController {
         return "requests";
       }
       model.addAttribute("requests", result.getData());
+      //for each result add the name of the doctor
+      System.out.println(result.getData());
+      for (Request req : result.getData()){
+        int uid = req.getRequester();
+        Map<String, Object> user = userService.findUserById(String.valueOf(uid));
+        user.get("email");
+      }
+
       return "requests";
     } catch (Exception e) {
       // Handle unexpected errors
@@ -442,12 +428,22 @@ public class MainController {
   }
 
 
+
+  @GetMapping("/request_form")
+  public String gotoRequestCreate(Model model, @RequestParam String tid, HttpServletRequest request) {
+    model.addAttribute("tid", tid);
+    String email = util.getCookie("email", request);
+    model.addAttribute("email", email);
+    return "request_create_form";
+  }
+
+
   @PostMapping("/request_create_form")
   @ResponseBody
-  public String createRequest(@RequestParam String email,
-                               @RequestParam String tid,
-                               @RequestParam String description,
-                               @RequestParam String status,
+  public String createRequest(String email,
+                               String tid,
+                               String description,
+                               String status,
                                Model model) {
     try {
       Pair<String, Boolean> response = requestService.createRequest(email, tid, description, status);
@@ -461,6 +457,8 @@ public class MainController {
     } catch (Exception ex) {
       model.addAttribute("error", "An unexpected error occurred: " + ex.getMessage());
       return "request_create_form";
+    }
+  }
 
   /**
    * View current user timeslots

@@ -8,6 +8,7 @@ public class apiConfig {
   public static String USER_DELETE = "/users/delete";
   public static String USER_FIND_BY_NAME = "/users/findByName";
   public static String USER_FIND_BY_EMAIL = "/users/findByEmail";
+  public static String USER_FIND_BY_ID = "/users/findById";
   public static String USER_GET_ALL = "/users/get_all";
 
   public final static String TIME_SLOT_GET_ALL_BY_EMAIL = "/timeslots/user";

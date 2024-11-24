@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Time Slots</title>
+</head>
+<body>
+<h1>Requests</h1>
+<!-- Display error if present -->
+<div th:if="${error}" style="color: red;">
+  <p th:text="${error}"></p>
+</div>
+
+<div th:if="${requests}">
+  <ul>
+    <li th:each="req : ${requests}">
+      <p><strong>Requester:</strong> Should be requester name<span th:text="${req.doctorName}"></span></p>
+      <p><strong>TimeSlot:</strong> <span th:text="${req.tid}"></span></p>
+      <p><strong>Description:</strong> <span th:text="${req.description}"></span></p>
+      <p><strong>Status:</strong> <span th:text="${req.status}"></span></p>
+      <hr>
+    </li>
+  </ul>
+</div>
+
+<!-- Display message if no time slots -->
+<div th:if="${requests == null || #lists.isEmpty(requests)}">
+  <p>No time slots available.</p>
+</div>
+</body>
+</html>
