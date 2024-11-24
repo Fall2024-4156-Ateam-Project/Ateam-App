@@ -337,6 +337,8 @@ public class MainController {
   }
 
 
+
+
   @PostMapping("/timeslot_create_form")
   public String createTimeslot(
 //      String email,
@@ -388,7 +390,7 @@ public class MainController {
       Gson gson = new GsonBuilder()
           .registerTypeAdapter(LocalTime.class, new LocalTimeAdapter())
           .create();
-      List<TimeSlot> rawData = timeSlotService.getUserTimeSlots(userEmail).get().getData();
+      List<TimeSlot> rawData = result.getData();
       System.out.println("timeSlotsJson " + gson.toJson(result.getData()));
       Map<Day, List<TimeSlot>> normalizedSlots = timeSlotService.normalizeTimeSlots(rawData);
       model.addAttribute("timeSlotsJson", gson.toJson(normalizedSlots));
@@ -400,7 +402,33 @@ public class MainController {
     }
   }
 
+  /**
+   * Get timeslot detail by tid
+   * @param request
+   * @param model
+   * @param tid
+   * @return
+   */
+  @GetMapping("/timeSlot")
+  public String getTimeSlotDetail(HttpServletRequest request, Model model, @RequestParam int tid){
 
+    try {
+      Triple<String, Boolean, TimeSlot> result = timeSlotService.getTimeSlot(tid)
+          .get();
+      System.out.println("result" + result);
+      if (!result.getStatus()) {
+        model.addAttribute("error", result.getMessage());
+        return "home";
+      }
+
+      model.addAttribute("timeSlotData", result.getData());
+      model.addAttribute("currentUserEmail", util.getCookie("email", request));
+      return "timeslots_detail";
+    } catch (Exception e) {
+      model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());
+      return "error";
+    }
+  }
 
   @GetMapping("/meeting_create_form")
   public String showCreateMeetingForm(HttpServletRequest request, Model model) {

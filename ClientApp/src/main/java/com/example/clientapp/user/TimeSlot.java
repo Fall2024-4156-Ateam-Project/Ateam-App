@@ -13,8 +13,25 @@ public class TimeSlot {
   private LocalTime startTime;
   private LocalTime endTime;
 
-  @JsonProperty("day")
-  private CommonTypes.Day day;
+  public int getTid() {
+    return tid;
+  }
+
+  public void setTid(int tid) {
+    this.tid = tid;
+  }
+
+  private int tid;
+
+  public int getUid() {
+    return uid;
+  }
+
+  public void setUid(int uid) {
+    this.uid = uid;
+  }
+
+  private int uid;
 
   public Day getStartDay() {
     return startDay;
@@ -33,7 +50,6 @@ public class TimeSlot {
     return "TimeSlot{" +
         "startTime=" + startTime +
         ", endTime=" + endTime +
-        ", day=" + day +
         ", startDay=" + startDay +
         ", endDay=" + endDay +
         ", availability=" + availability +
@@ -52,23 +68,16 @@ public class TimeSlot {
   private CommonTypes.Availability availability;
 
   public TimeSlot(LocalTime startTime, LocalTime endTime, Day startDay, Day endDay,
-      Availability availability) {
+      Availability availability, int tid) {
     this.startTime = startTime;
     this.endTime = endTime;
     this.startDay = startDay;
     this.endDay = endDay;
     this.availability = availability;
+    this.tid = tid;
   }
 
   public TimeSlot() {
-  }
-
-  public Day getDay() {
-    return day;
-  }
-
-  public void setDay(Day day) {
-    this.day = day;
   }
 
   public LocalTime getStartTime() {
