@@ -172,6 +172,7 @@
     const daySlots = timeSlots[day] || [];
 
     daySlots.forEach((slot) => {
+      console.log("slot", slot);
       const startMinutes = timeStringToMinutes(slot.startTime);
       const endMinutes = timeStringToMinutes(slot.endTime);
       const duration = endMinutes - startMinutes;
@@ -193,6 +194,11 @@
       timeSlotDiv.appendChild(label);
 
       dayTimeline.appendChild(timeSlotDiv);
+
+      // to detail page
+      timeSlotDiv.addEventListener("click", () => {
+        window.location.href = `/timeSlot?tid=${slot.tid}`;
+      });
     });
 
     // Add current time indicator

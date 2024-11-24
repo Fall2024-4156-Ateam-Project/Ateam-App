@@ -90,6 +90,30 @@ public class TimeSlotService {
     );
   }
 
+  public CompletableFuture<Triple<String, Boolean, TimeSlot>> getTimeSlot(int tid) {
+    String url = UriComponentsBuilder.fromHttpUrl(
+            apiConfig.baseApi + apiConfig.TIMESLOTS + "/" + tid)
+        .toUriString();
+    Map<String, String> requestBody = new HashMap<>();
+    HttpEntity<Map<String, String>> request = generateRequest(requestBody);
+    return CompletableFuture.supplyAsync(() ->
+    {
+      try {
+
+        ResponseEntity<String> rawResponse = restTemplate.exchange(url, HttpMethod.GET, request,
+            String.class);
+        TimeSlot ts = objectMapper.readValue(
+            rawResponse.getBody(), new TypeReference<TimeSlot>() {
+            });
+        return new Triple<>("Retrieve Success", true, ts);
+      } catch (HttpClientErrorException | HttpServerErrorException e) {
+        return new Triple<>("Unexpected error occurred: " + e.getMessage(), false, null);
+      } catch (JsonProcessingException e) {
+        // Handle JSON processing exceptions
+        return new Triple<>("JSON processing error: " + e.getMessage(), false, null);
+      }
+    });
+  }
 
   public Map<Day, List<TimeSlot>> normalizeTimeSlots(List<TimeSlot> timeSlots) {
     Map<Day, List<TimeSlot>> result = new HashMap<>();
@@ -109,7 +133,8 @@ public class TimeSlotService {
 
         result.putIfAbsent(currentDay, new ArrayList<>());
         result.get(currentDay)
-            .add(new TimeSlot(startTime, endTime, currentDay, currentDay, slot.getAvailability()));
+            .add(new TimeSlot(startTime, endTime, currentDay, currentDay, slot.getAvailability(),
+                slot.getTid()));
 
 //        System.out.println("Added to " + currentDay + ": " + result.get(currentDay));
       }

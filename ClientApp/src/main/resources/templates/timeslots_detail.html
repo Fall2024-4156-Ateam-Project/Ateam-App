@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TimeSlot Details</title>
+  <link rel="stylesheet" href="/css/style.css"> <!-- Optional for styling -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    .container {
+      margin: auto;
+      width: 50%;
+    }
+    .back-link {
+      margin-top: 20px;
+      display: block;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>TimeSlot Details</h1>
+  <table>
+    <tbody>
+    <tr>
+      <th>Start Time</th>
+      <td th:text="${timeSlotData.startTime}">N/A</td>
+    </tr>
+    <tr>
+      <th>End Time</th>
+      <td th:text="${timeSlotData.endTime}">N/A</td>
+    </tr>
+    <tr>
+      <th>Start Day</th>
+      <td th:text="${timeSlotData.startDay}">N/A</td>
+    </tr>
+    <tr>
+      <th>End Day</th>
+      <td th:text="${timeSlotData.endDay}">N/A</td>
+    </tr>
+    <tr>
+      <th>Availability</th>
+      <td th:text="${timeSlotData.availability}">N/A</td>
+    </tr>
+    </tbody>
+  </table>
+  <a class="back-link" href="/home">Back to Home</a>
+</div>
+</body>
+</html>
