@@ -115,6 +115,41 @@ public class TimeSlotService {
     });
   }
 
+  public Pair<String, Boolean> updateTimeSlot(int tid, String email,
+      String startDay, String endDay,
+      String startTime, String endTime, String availability) {
+    String url = UriComponentsBuilder.fromHttpUrl(
+            apiConfig.baseApi + apiConfig.TIMESLOTS_UPDATE + "/" + tid)
+        .toUriString();
+    if (email == null) {
+      return new Pair<>("User not found with the given email: ", false);
+    }
+    Map<String, Object> user = findUserByEmail(email);
+
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("user", user);
+    requestBody.put("startDay", startDay);
+    requestBody.put("endDay", endDay);
+    requestBody.put("startTime", startTime);
+    requestBody.put("endTime", endTime);
+    requestBody.put("availability", availability);
+    HttpEntity<Map<String, Object>> request = generateRequestobject(requestBody);
+    try {
+      ResponseEntity<String> rawResponse = restTemplate.exchange(
+          url,
+          HttpMethod.PUT,
+          request,
+          String.class
+      );
+      System.out.println("Response Body: " + rawResponse.getBody());
+      return new Pair<>(rawResponse.getBody(), true);
+    } catch (HttpClientErrorException | HttpServerErrorException e) {
+      System.out.println("Error Response Body: " + e.getResponseBodyAsString());
+      System.out.println("Error Response Status: " + e.getStatusCode());
+      return new Pair<>(e.getResponseBodyAsString(), false);
+    }
+  }
+
   public Map<Day, List<TimeSlot>> normalizeTimeSlots(List<TimeSlot> timeSlots) {
     Map<Day, List<TimeSlot>> result = new HashMap<>();
 //    System.out.println("normalizeTimeSlots (initial): " + result);
