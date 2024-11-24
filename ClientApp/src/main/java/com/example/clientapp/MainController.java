@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.List;
 import java.util.Map;
@@ -353,7 +354,8 @@ public class MainController {
     System.out.println("email: " + email);
     System.out.println("endday: " + endDay);
     try {
-      Pair<String, Boolean> response = timeSlotService.createTimeslotWithMerge(email, startDay, endDay,
+      Pair<String, Boolean> response = timeSlotService.createTimeslotWithMerge(email, startDay,
+          endDay,
           startTime,
           endTime, availability);
       System.out.println("Response: " + response.msg() + " Status: " + response.status());
@@ -479,7 +481,7 @@ public class MainController {
       Gson gson = new GsonBuilder()
           .registerTypeAdapter(LocalTime.class, new LocalTimeAdapter())
           .create();
-      List<TimeSlot> rawData = timeSlotService.getUserTimeSlots(userEmail).get().getData();
+      List<TimeSlot> rawData = result.getData();
       System.out.println("timeSlotsJson " + gson.toJson(result.getData()));
       Map<Day, List<TimeSlot>> normalizedSlots = timeSlotService.normalizeTimeSlots(rawData);
       model.addAttribute("timeSlotsJson", gson.toJson(normalizedSlots));
@@ -491,7 +493,76 @@ public class MainController {
     }
   }
 
+  /**
+   * Get timeslot detail by tid
+   *
+   * @param request
+   * @param model
+   * @param tid
+   * @return
+   */
+  @GetMapping("/timeSlot")
+  public String getTimeSlotDetail(HttpServletRequest request, Model model, @RequestParam int tid) {
 
+    try {
+      Triple<String, Boolean, TimeSlot> result = timeSlotService.getTimeSlot(tid)
+          .get();
+      System.out.println("result" + result);
+      if (!result.getStatus()) {
+        model.addAttribute("error", result.getMessage());
+        return "home";
+      }
+
+      model.addAttribute("timeSlotData", result.getData());
+      model.addAttribute("days", Arrays.asList("Monday", "Tuesday", "Wednesday",
+          "Thursday", "Friday", "Saturday", "Sunday"));
+      model.addAttribute("currentUserEmail", util.getCookie("email", request));
+      return "timeslots_detail";
+    } catch (Exception e) {
+      model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());
+      return "error";
+    }
+  }
+
+
+  /**
+   * User can only update their time slot
+   *
+   * @param model
+   * @param tid
+   * @param startDay
+   * @param endDay
+   * @param startTime
+   * @param endTime
+   * @param availability
+   * @param request
+   * @return
+   */
+  @PostMapping("/timeSlot/update")
+  public String updateTimeSlot(
+      Model model,
+      @RequestParam int tid,
+      String startDay,
+      String endDay,
+      String startTime,
+      String endTime,
+      String availability,
+      HttpServletRequest request) {
+    String email = util.getCookie("email", request);
+    try {
+      Pair<String, Boolean> result = timeSlotService.updateTimeSlot(tid, email,
+          startDay, endDay, startTime, endTime, availability);
+      System.out.println("result" + result);
+      if (!result.status()) {
+        model.addAttribute("error", result.msg());
+        return "home";
+      }
+      return "redirect:/view_my_timeslots";
+    } catch (Exception e) {
+      model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());
+      return "home";
+    }
+  }
 
   @GetMapping("/meeting_create_form")
   public String showCreateMeetingForm(HttpServletRequest request, Model model) {
@@ -504,8 +575,10 @@ public class MainController {
   }
 
   @PostMapping("/create_meeting")
-  public String createMeeting(@ModelAttribute Meeting meeting, HttpServletRequest request, Model model) {
-    String organizerEmail = util.getCookie("email", request); // Retrieve organizer's email from cookie
+  public String createMeeting(@ModelAttribute Meeting meeting, HttpServletRequest request,
+      Model model) {
+    String organizerEmail = util.getCookie("email",
+        request); // Retrieve organizer's email from cookie
 
     if (organizerEmail == null || organizerEmail.isEmpty()) {
       model.addAttribute("error", "Organizer email is missing.");

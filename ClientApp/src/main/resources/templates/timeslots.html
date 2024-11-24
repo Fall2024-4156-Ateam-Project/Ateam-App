@@ -67,11 +67,19 @@
       background-color: rgba(76, 175, 80, 0.7); /* Green with transparency */
       border: 1px solid #4CAF50;
       box-sizing: border-box;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .time-slot.busy {
       background-color: rgba(244, 67, 54, 0.7); /* Red with transparency */
       border-color: #F44336;
+    }
+
+    /* Hover effect */
+    .time-slot:hover {
+      transform: scale(1.05); /* Slightly enlarge the slot */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow */
+      cursor: pointer;
     }
 
     .time-slot-label {
@@ -199,6 +207,11 @@
       });
 
       dayTimeline.appendChild(timeSlotDiv);
+
+      // to detail page
+      timeSlotDiv.addEventListener("click", () => {
+        window.location.href = `/timeSlot?tid=${slot.tid}`;
+      });
     });
 
     // Add current time indicator

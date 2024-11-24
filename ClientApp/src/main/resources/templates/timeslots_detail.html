@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TimeSlot Details</title>
+  <link rel="stylesheet" href="/css/style.css"> <!-- Optional for styling -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table, th, td {
+      border: 1px solid black;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f4f4f4;
+    }
+
+    .container {
+      margin: auto;
+      width: 50%;
+    }
+
+    .form-container {
+      margin-top: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+
+    input, select, button {
+      margin-top: 5px;
+      padding: 5px;
+      width: 100%;
+    }
+
+    .back-link {
+      margin-top: 20px;
+      display: block;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>TimeSlot Details</h1>
+
+  <p>Start Day Debug: <span th:text="${timeSlotData.startDay}">N/A</span></p>
+  <p>End Day Debug: <span th:text="${timeSlotData.endDay}">N/A</span></p>
+
+  <!-- Display TimeSlot Details -->
+  <table>
+    <tbody>
+    <tr>
+      <th>Start Time</th>
+      <td th:text="${timeSlotData.startTime}">N/A</td>
+    </tr>
+    <tr>
+      <th>End Time</th>
+      <td th:text="${timeSlotData.endTime}">N/A</td>
+    </tr>
+    <tr>
+      <th>Start Day</th>
+      <td th:text="${timeSlotData.startDay}">N/A</td>
+    </tr>
+    <tr>
+      <th>End Day</th>
+      <td th:text="${timeSlotData.endDay}">N/A</td>
+    </tr>
+    <tr>
+      <th>Availability</th>
+      <td th:text="${timeSlotData.availability}">N/A</td>
+    </tr>
+    </tbody>
+  </table>
+
+  <!-- Form to Modify TimeSlot Details -->
+  <div class="form-container">
+    <h2>Modify TimeSlot</h2>
+    <form action="/timeSlot/update" method="post">
+      <input type="hidden" name="tid" th:value="${timeSlotData.tid}"/>
+
+      <!-- Hidden inputs to store selected values -->
+      <input type="hidden" id="hiddenStartDay" name="startDay" th:value="${timeSlotData.startDay}"/>
+      <input type="hidden" id="hiddenEndDay" name="endDay" th:value="${timeSlotData.endDay}"/>
+
+      <!-- Select element for startDay -->
+      <label for="startDaySelect">Start Day:</label>
+      <select id="startDaySelect" required>
+        <option value="Monday">Monday</option>
+        <option value="Tuesday">Tuesday</option>
+        <option value="Wednesday">Wednesday</option>
+        <option value="Thursday">Thursday</option>
+        <option value="Friday">Friday</option>
+        <option value="Saturday">Saturday</option>
+        <option value="Sunday">Sunday</option>
+      </select>
+
+      <!-- Select element for endDay -->
+      <label for="endDaySelect">End Day:</label>
+      <select id="endDaySelect" required>
+        <option value="Monday">Monday</option>
+        <option value="Tuesday">Tuesday</option>
+        <option value="Wednesday">Wednesday</option>
+        <option value="Thursday">Thursday</option>
+        <option value="Friday">Friday</option>
+        <option value="Saturday">Saturday</option>
+        <option value="Sunday">Sunday</option>
+      </select>
+
+      <label for="startTime">Start Time:</label>
+      <input type="time" name="startTime" id="startTime" th:value="${timeSlotData.startTime}" required/>
+
+      <label for="endTime">End Time:</label>
+      <input type="time" name="endTime" id="endTime" th:value="${timeSlotData.endTime}" required/>
+
+      <label for="availability">Availability:</label>
+      <select name="availability" id="availability" required>
+        <option value="available" th:selected="${timeSlotData.availability == 'available'}">Available</option>
+        <option value="busy" th:selected="${timeSlotData.availability == 'busy'}">Busy</option>
+      </select>
+
+      <button type="submit">Update TimeSlot</button>
+    </form>
+  </div>
+
+  <a class="back-link" href="/home">Back to Home</a>
+</div>
+
+<script>
+  // Get hidden inputs and dropdowns
+  const hiddenStartDay = document.getElementById("hiddenStartDay");
+  const hiddenEndDay = document.getElementById("hiddenEndDay");
+
+  const startDaySelect = document.getElementById("startDaySelect");
+  const endDaySelect = document.getElementById("endDaySelect");
+
+  // Initialize dropdowns with hidden input values
+  startDaySelect.value = hiddenStartDay.value;
+  endDaySelect.value = hiddenEndDay.value;
+
+  // Update hidden inputs when dropdowns change
+  startDaySelect.addEventListener("change", () => {
+    hiddenStartDay.value = startDaySelect.value;
+  });
+
+  endDaySelect.addEventListener("change", () => {
+    hiddenEndDay.value = endDaySelect.value;
+  });
+</script>
+</body>
+</html>
