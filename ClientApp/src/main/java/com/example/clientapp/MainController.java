@@ -387,14 +387,8 @@ public class MainController {
         return "requests";
       }
       model.addAttribute("requests", result.getData());
-      //for each result add the name of the doctor
-      System.out.println(result.getData());
-      for (Request req : result.getData()){
-        int uid = req.getRequester();
-        Map<String, Object> user = userService.findUserById(String.valueOf(uid));
-        user.get("email");
+      for (Request req : result.getData()) {
       }
-
       return "requests";
     } catch (Exception e) {
       // Handle unexpected errors
@@ -517,6 +511,8 @@ public class MainController {
       model.addAttribute("days", Arrays.asList("Monday", "Tuesday", "Wednesday",
           "Thursday", "Friday", "Saturday", "Sunday"));
       model.addAttribute("currentUserEmail", util.getCookie("email", request));
+      model.addAttribute("role", util.getCookie("role", request));
+      model.addAttribute("tid", tid);
       return "timeslots_detail";
     } catch (Exception e) {
       model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());

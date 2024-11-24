@@ -13,7 +13,8 @@ public class Request {
   @JsonProperty("status")
   private CommonTypes.RequestStatus status;
   private String description;
-  private String doctor;
+  private String requesterName;
+  private String requesterEmail;
 
   public Request() {
   }
@@ -26,19 +27,19 @@ public class Request {
     this.description = description;
   }
   
-  public int getRequester() {
+  public int getRequesterId() {
     return requesterId;
   }
   
-  public int getTimeSlot() {
+  public int getTid() {
     return tid;
   }
   
-  public void setRequester(int requesterId) {
+  public void setRequesterId(int requesterId) {
     this.requesterId = requesterId;
   }
   
-  public void setTimeSlot(int tid) {
+  public void setTid(int tid) {
     this.tid = tid;
   }
   
@@ -49,12 +50,17 @@ public class Request {
   public CommonTypes.RequestStatus getStatus() {
     return status;
   }
-  public String getDocotr() {
-    return doctor;
+  public String getRequesterName() {
+    return requesterName;
   }
-
-  public void setDoctor(String doctor) {
-    this.doctor = doctor;
+  public void setRequesterName(String requesterName) {
+    this.requesterName = requesterName;
+  }
+  public void setRequesterEmail(String requesterEmail) {
+    this.requesterEmail = requesterEmail;
+  }
+  public String getRequesterEmail() {
+    return requesterEmail;
   }
   
 }

@@ -22,8 +22,6 @@ public class TimeSlot {
     this.tid = tid;
   }
 
-  private int tid;
-
   public int getUid() {
     return uid;
   }
@@ -33,14 +31,6 @@ public class TimeSlot {
   }
 
   private int uid;
-
-  public int getTid() {
-    return tid;
-  }
-
-  public void setTid(int tid) {
-    this.tid = tid;
-  }
 
   public Day getStartDay() {
     return startDay;

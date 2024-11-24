@@ -1,12 +1,16 @@
 package com.example.clientapp.apiService;
 
 import com.example.clientapp.user.Request;
+import com.example.clientapp.util.CommonTypes.RequestStatus;
+import com.example.clientapp.util.CommonTypes;
 import com.example.clientapp.util.Pair;
 import com.example.clientapp.util.Triple;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Time;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,10 +83,36 @@ public class RequestService {
           try {
 
             ResponseEntity<String> rawResponse =restTemplate.exchange(url, HttpMethod.GET, request, String.class);
-            List<Request> requests = objectMapper.readValue(
-                rawResponse.getBody(), new TypeReference<List<Request>>() {
+            JsonNode rootNode = objectMapper.readTree(rawResponse.getBody());
+
+            // Create a list to hold the mapped Request objects
+            List<Request> requests = new ArrayList<>();
+
+            // Loop through the raw JSON response and map to Request objects
+            for (JsonNode node : rootNode) {
+                Request r = new Request();
+                
+                // Extract the status and description from the root
+                r.setStatus(CommonTypes.RequestStatus.valueOf(node.get("status").asText()));
+                r.setDescription(node.get("description").asText());
+
+                // Extract user details for requesterId, requesterName, and requesterEmail
+                JsonNode userNode = node.get("user");
+                if (userNode != null) {
+                    r.setRequesterId(userNode.get("uid").asInt());
+                    r.setRequesterName(userNode.get("name").asText());
+                    r.setRequesterEmail(userNode.get("email").asText());
                 }
-            );
+
+                // Extract timeSlot details for tid
+                JsonNode timeSlotNode = node.get("timeSlot");
+                if (timeSlotNode != null) {
+                    r.setTid(timeSlotNode.get("tid").asInt());
+                }
+
+                // Add the mapped request to the list
+                requests.add(r);
+            }
             return new Triple<>("Retrieve Success", true, requests);
           } catch (HttpClientErrorException | HttpServerErrorException e) {
             return new Triple<>("Unexpected error occurred: " + e.getMessage(), false, null);
@@ -111,10 +141,37 @@ public class RequestService {
           try {
 
             ResponseEntity<String> rawResponse =restTemplate.exchange(url, HttpMethod.GET, request, String.class);
-            List<Request> requests = objectMapper.readValue(
-                rawResponse.getBody(), new TypeReference<List<Request>>() {
+            // Parse the raw JSON response
+            JsonNode rootNode = objectMapper.readTree(rawResponse.getBody());
+
+            // Create a list to hold the mapped Request objects
+            List<Request> requests = new ArrayList<>();
+
+            // Loop through the raw JSON response and map to Request objects
+            for (JsonNode node : rootNode) {
+                Request r = new Request();
+                
+                // Extract the status and description from the root
+                r.setStatus(CommonTypes.RequestStatus.valueOf(node.get("status").asText()));
+                r.setDescription(node.get("description").asText());
+
+                // Extract user details for requesterId, requesterName, and requesterEmail
+                JsonNode userNode = node.get("user");
+                if (userNode != null) {
+                    r.setRequesterId(userNode.get("uid").asInt());
+                    r.setRequesterName(userNode.get("name").asText());
+                    r.setRequesterEmail(userNode.get("email").asText());
                 }
-            );
+
+                // Extract timeSlot details for tid
+                JsonNode timeSlotNode = node.get("timeSlot");
+                if (timeSlotNode != null) {
+                    r.setTid(timeSlotNode.get("tid").asInt());
+                }
+
+                // Add the mapped request to the list
+                requests.add(r);
+            }
             return new Triple<>("Retrieve Success", true, requests);
           } catch (HttpClientErrorException | HttpServerErrorException e) {
             return new Triple<>("Unexpected error occurred: " + e.getMessage(), false, null);
