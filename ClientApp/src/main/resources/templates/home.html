@@ -98,6 +98,9 @@
     <button type="submit" class="button">Logout</button>
   </form>
 </div>
+<div th:if="${error}">
+  <p style="color: red;">Error: <span th:text="${error}"></span></p>
+</div>
 
 <!-- Role-based Toolbar -->
 <div class="toolbar">

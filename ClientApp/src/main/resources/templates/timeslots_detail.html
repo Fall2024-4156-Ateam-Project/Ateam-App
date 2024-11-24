@@ -89,8 +89,9 @@
     </tbody>
   </table>
 
+
   <!-- Form to Modify TimeSlot Details -->
-  <div class="form-container">
+  <div class="form-container" th:if="${currentUserEmail == timeSlotUserEmail}">
     <h2>Modify TimeSlot</h2>
     <form action="/timeSlot/update" method="post">
       <input type="hidden" name="tid" th:value="${timeSlotData.tid}"/>

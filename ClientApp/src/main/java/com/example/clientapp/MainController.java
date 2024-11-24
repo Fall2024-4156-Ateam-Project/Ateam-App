@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.net.URLEncoder;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +34,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.WebUtils;
 
 @Controller
@@ -307,10 +309,6 @@ public class MainController {
       HttpServletRequest request, Model model) {
     String email = util.getCookie("email", request);
     String role = util.getCookie("role", request);
-//    if (!role.equals(Role.doctor)){
-//      return CompletableFuture.completedFuture( new ArrayList<>());
-//    }
-//    CompletableFuture<Triple<String, Boolean, List<TimeSlot>>>
     try {
       Triple<String, Boolean, List<TimeSlot>> result = timeSlotService.getUserTimeSlots(doctorEmail)
           .get();
@@ -321,14 +319,14 @@ public class MainController {
 
       Gson gson = new GsonBuilder()
           .registerTypeAdapter(LocalTime.class, new LocalTimeAdapter())
+          .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
           .create();
       List<TimeSlot> rawData = timeSlotService.getUserTimeSlots(doctorEmail).get().getData();
       System.out.println("timeSlotsJson " + gson.toJson(result.getData()));
       Map<Day, List<TimeSlot>> normalizedSlots = timeSlotService.normalizeTimeSlots(rawData);
       model.addAttribute("timeSlotsJson", gson.toJson(normalizedSlots));
       model.addAttribute("userEmail", doctorEmail);
-//      model.addAttribute("daysOfWeek",
-//          List.of("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"));
+
       return "timeslots";
     } catch (Exception e) {
       model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());
@@ -377,27 +375,7 @@ public class MainController {
   @GetMapping("/view_my_timeslots")
   public String viewMyTimeSlot(HttpServletRequest request, Model model) {
     String userEmail = util.getCookie("email", request);
-    try {
-      Triple<String, Boolean, List<TimeSlot>> result = timeSlotService.getUserTimeSlots(userEmail)
-          .get();
-      if (!result.getStatus()) {
-        model.addAttribute("error", result.getMessage());
-        return "timeslots";
-      }
-
-      Gson gson = new GsonBuilder()
-          .registerTypeAdapter(LocalTime.class, new LocalTimeAdapter())
-          .create();
-      List<TimeSlot> rawData = result.getData();
-      System.out.println("timeSlotsJson " + gson.toJson(result.getData()));
-      Map<Day, List<TimeSlot>> normalizedSlots = timeSlotService.normalizeTimeSlots(rawData);
-      model.addAttribute("timeSlotsJson", gson.toJson(normalizedSlots));
-      model.addAttribute("userEmail", userEmail);
-      return "timeslots";
-    } catch (Exception e) {
-      model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());
-      return "error";
-    }
+    return "redirect:/search/doctor/timeSlots?doctorEmail=" + userEmail;
   }
 
   /**
@@ -409,8 +387,8 @@ public class MainController {
    * @return
    */
   @GetMapping("/timeSlot")
-  public String getTimeSlotDetail(HttpServletRequest request, Model model, @RequestParam int tid) {
-
+  public String getTimeSlotDetail(HttpServletRequest request, Model model, @RequestParam int tid,
+      RedirectAttributes redirectAttributes) {
     try {
       Triple<String, Boolean, TimeSlot> result = timeSlotService.getTimeSlot(tid)
           .get();
@@ -424,10 +402,12 @@ public class MainController {
       model.addAttribute("days", Arrays.asList("Monday", "Tuesday", "Wednesday",
           "Thursday", "Friday", "Saturday", "Sunday"));
       model.addAttribute("currentUserEmail", util.getCookie("email", request));
+      model.addAttribute("timeSlotUserEmail", result.getData().getUser().getEmail());
+      model.addAttribute("currentUserRole", util.getCookie("role", request));
       return "timeslots_detail";
     } catch (Exception e) {
-      model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());
-      return "error";
+      redirectAttributes.addFlashAttribute("error", "An unexpected error occurred: " + e.getMessage());
+      return "redirect:/home";
     }
   }
 
@@ -454,20 +434,22 @@ public class MainController {
       String startTime,
       String endTime,
       String availability,
-      HttpServletRequest request) {
+      HttpServletRequest request,
+      RedirectAttributes redirectAttributes) {
     String email = util.getCookie("email", request);
     try {
       Pair<String, Boolean> result = timeSlotService.updateTimeSlot(tid, email,
           startDay, endDay, startTime, endTime, availability);
       System.out.println("result" + result);
       if (!result.status()) {
-        model.addAttribute("error", result.msg());
-        return "home";
+        redirectAttributes.addFlashAttribute("error", result.msg());
+        return "redirect:/home";
       }
       return "redirect:/view_my_timeslots";
     } catch (Exception e) {
-      model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());
-      return "home";
+      redirectAttributes.addFlashAttribute("error",
+          "An unexpected error occurred: " + e.getMessage());
+      return "redirect:/home";
     }
   }
 
