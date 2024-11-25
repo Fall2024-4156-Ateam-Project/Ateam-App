@@ -106,14 +106,40 @@
         </div>
 
         <div class="form-group">
-            <label for="startTime">Start Time:</label>
-            <input type="datetime-local" id="startTime" name="startTime" required>
-        </div>
-
-        <div class="form-group">
-            <label for="endTime">End Time:</label>
-            <input type="datetime-local" id="endTime" name="endTime" required>
-        </div>
+            <label for="startDay" class="form-label">Start Day</label>
+            <select id="startDay" class="form-input" name="startDay" required>
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Friday">Friday</option>
+              <option value="Saturday">Saturday</option>
+              <option value="Sunday">Sunday</option>
+            </select>
+          </div>
+      
+          <div class="form-group">
+            <label for="startTime" class="form-label">Start Time</label>
+            <input id="startTime" class="form-input" type="time" name="startTime" required/>
+          </div>
+      
+          <div class="form-group">
+            <label for="endDay" class="form-label">End Day</label>
+            <select id="endDay" class="form-input" name="endDay" required>
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Friday">Friday</option>
+              <option value="Saturday">Saturday</option>
+              <option value="Sunday">Sunday</option>
+            </select>
+          </div>
+      
+          <div class="form-group">
+            <label for="endTime" class="form-label">End Time</label>
+            <input id="endTime" class="form-input" type="time" name="endTime" required/>
+          </div>
 
         <div class="form-group">
             <label for="status">Status:</label>

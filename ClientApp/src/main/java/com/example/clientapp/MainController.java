@@ -576,6 +576,19 @@ public class MainController {
   }
 
 
+  @GetMapping("/view_my_meetings")
+  @ResponseBody
+  public CompletableFuture<List<Meeting>> viewMyMeetings(HttpServletRequest request, Model model) {
+    String email = util.getCookie("email", request);
+    return meetingService.getMyMeetings(email);
+  }
+
+  @GetMapping("/view_meetings")
+  public String doctorMeetingsPage() {
+    return "view_meetings";
+  }
+
+
   @GetMapping("/meeting_create_form")
   public String showCreateMeetingForm(HttpServletRequest request, Model model) {
     String role = util.getCookie("role", request);
@@ -613,7 +626,7 @@ public class MainController {
       MeetingResponse response = responseFuture.get();
       if (response.isStatus()) {
         model.addAttribute("success", response.getMessage());
-        return "redirect:/meetings";
+        return "redirect:/view_meetings";
       } else {
         model.addAttribute("error", response.getMessage());
         return "meeting_create_form";

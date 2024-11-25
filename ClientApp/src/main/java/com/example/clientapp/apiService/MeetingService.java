@@ -6,12 +6,13 @@ import com.example.clientapp.util.MeetingResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import com.example.clientapp.util.Triple;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -91,7 +92,7 @@ public class MeetingService {
           return new MeetingResponse("User not found with the given email: " + meeting.getOrganizerEmail(), false);
         }
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+       // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
         String url = apiConfig.baseApi + apiConfig.MEETINGS_SAVE;
         System.out.println("API URL: " + url);
         Map<String, Object> requestBody = new HashMap<>();
@@ -101,8 +102,10 @@ public class MeetingService {
         requestBody.put("description", meeting.getDescription());
         requestBody.put("recurrence", meeting.getRecurrence().name());
         requestBody.put("status", meeting.getStatus().name());
-        requestBody.put("startTime", meeting.getStartTime().format(formatter));
-        requestBody.put("endTime", meeting.getEndTime().format(formatter));
+        requestBody.put("startDay", meeting.getStartDay());
+        requestBody.put("endDay", meeting.getEndDay());
+        requestBody.put("startTime", meeting.getStartTime());
+        requestBody.put("endTime", meeting.getEndTime());
 
         HttpEntity<Map<String, Object>> request = generateRequestObject(requestBody);
 
@@ -120,6 +123,29 @@ public class MeetingService {
         return new MeetingResponse(e.getResponseBodyAsString(), false);
       } catch (Exception e) {
         return new MeetingResponse("Unexpected error occurred: " + e.getMessage(), false);
+      }
+    });
+  }
+
+  public CompletableFuture<List<Meeting>> getMyMeetings(String email) {
+
+    String url = apiConfig.baseApi + apiConfig.MEETINGS_FIND_BY_EMAIL + "?email=" +email;
+    System.out.println("url: " + url);
+    // Use generateRequestObject to send the map as the request body
+    HttpEntity<Void> request = generateRequest();
+    System.out.println("request: " + request);
+    return CompletableFuture.supplyAsync(() -> {
+      try {
+        // Send the GET request to the server with the map (containing user details) as the body
+        ResponseEntity<String> rawResponse = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
+        List<Meeting> meetings = objectMapper.readValue(
+                rawResponse.getBody(), new TypeReference<List<Meeting>>() {}
+        );
+        return meetings;  // Directly return the List<Meeting>
+      } catch (HttpClientErrorException | HttpServerErrorException e) {
+        throw new RuntimeException("Unexpected error occurred: " + e.getMessage(), e);
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException("JSON processing error: " + e.getMessage(), e);
       }
     });
   }
