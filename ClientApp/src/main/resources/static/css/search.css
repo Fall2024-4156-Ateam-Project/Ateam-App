@@ -6,8 +6,13 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
   }
+
+  .content-container {
+    width: 100%;
+    height: auto;
+  }
+  
   
   .search-container {
     text-align: center;

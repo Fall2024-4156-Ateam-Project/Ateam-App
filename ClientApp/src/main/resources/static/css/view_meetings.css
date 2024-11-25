@@ -1,0 +1,59 @@
+body { 
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.content-container {
+    width: 100%;
+    height: auto;
+  }
+  
+  
+
+.meeting-container {
+    text-align: center;
+    padding: 2rem;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 800px; /* Increased max-width for better readability */
+}
+
+h1 {
+    color: #333;
+}
+
+#meetingList {
+    margin-top: 2rem;
+    text-align: left; /* Align content for readability */
+}
+
+.meeting-item {
+    padding: 1rem;
+    border-bottom: 1px solid #ddd;
+    background-color: #f9f9fb; /* Slight background difference for each meeting */
+    border-radius: 5px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for better structure */
+}
+
+.meeting-item p {
+    margin: 0.5rem 0;
+    color: #555;
+}
+
+.meeting-item p strong {
+    color: #333;
+}
+
+/* Add hover effect for meeting items */
+.meeting-item:hover {
+    background-color: #eaeaf2;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}

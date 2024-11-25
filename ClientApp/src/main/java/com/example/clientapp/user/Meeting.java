@@ -1,8 +1,11 @@
 package com.example.clientapp.user;
 
 import com.example.clientapp.util.CommonTypes;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
+import com.example.clientapp.util.CommonTypes.Availability;
+import com.example.clientapp.util.CommonTypes.Day;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.LocalTime;
 
 public class Meeting {
   private String description;
@@ -11,9 +14,13 @@ public class Meeting {
   private CommonTypes.MeetingStatus status;
   private String organizerEmail;
   private String participantEmail;
-  private LocalDateTime  startTime;
-  private LocalDateTime  endTime;
-  private LocalDateTime CreatedAt;
+  private LocalTime  startTime;
+  private LocalTime  endTime;
+  @JsonProperty("startDay")
+  private CommonTypes.Day startDay;
+  @JsonProperty("endDay")
+  private CommonTypes.Day endDay;
+  private LocalTime CreatedAt;
 
   // Constructors
   public Meeting() {
@@ -23,7 +30,7 @@ public class Meeting {
   public Meeting(String description, CommonTypes.Recurrence recurrence,
                  CommonTypes.MeetingType type, CommonTypes.MeetingStatus status,
                  String organizerEmail, String participantEmail,
-                 LocalDateTime startTime, LocalDateTime endTime) {
+                 LocalTime startTime, LocalTime endTime, CommonTypes.Day startDay, CommonTypes.Day endDay) {
     this.description = description;
     this.recurrence = recurrence;
     this.type = type;
@@ -32,6 +39,8 @@ public class Meeting {
     this.participantEmail = participantEmail;
     this.startTime = startTime;
     this.endTime = endTime;
+    this.startDay=startDay;
+    this.endDay=endDay;
   }
 
   public String getDescription() {
@@ -82,28 +91,44 @@ public class Meeting {
     this.status = status;
   }
 
-  public LocalDateTime getStartTime() {
+  public LocalTime getStartTime() {
     return startTime;
   }
 
-  public void setStartTime(LocalDateTime  startTime) {
+  public void setStartTime(LocalTime  startTime) {
     this.startTime = startTime;
   }
 
-  public LocalDateTime getEndTime() {
+  public LocalTime getEndTime() {
     return endTime;
   }
 
-  public void setEndTime(LocalDateTime endTime) {
+  public void setEndTime(LocalTime endTime) {
     this.endTime = endTime;
   }
 
 
-  public LocalDateTime getCreatedAt() {
+  public LocalTime getCreatedAt() {
     return CreatedAt;
   }
 
-  public void setCreatedAt(LocalDateTime createdAt) {
+  public void setCreatedAt(LocalTime createdAt) {
     CreatedAt = createdAt;
+  }
+
+  public CommonTypes.Day getStartDay() {
+    return startDay;
+  }
+
+  public void setStartDay(CommonTypes.Day startDay) {
+    this.startDay = startDay;
+  }
+
+  public CommonTypes.Day getEndDay() {
+    return endDay;
+  }
+
+  public void setEndDay(CommonTypes.Day endDay) {
+    this.endDay = endDay;
   }
 }

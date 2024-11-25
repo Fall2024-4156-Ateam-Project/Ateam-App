@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View My Meetings</title>
+  <!-- Link the meetings.css file -->
+  <link rel="stylesheet" th:href="@{/css/view_meetings.css}">
+  <link rel="stylesheet" href="../static/css/view_meetings.css">
+</head>
+<body>
+
+<div class="meeting-container">
+  <h1>My Meetings</h1>
+  <div id="meetingList">
+    <!-- Meeting items will be dynamically injected here -->
+  </div>
+</div>
+
+<!-- Link the meetings.js file -->
+<script th:src="@{/js/view_meetings.js}"></script>
+<script src="../static/js/view_meetings.js"></script>
+</body>
+</html>
