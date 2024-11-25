@@ -29,8 +29,9 @@ public class apiConfig {
   public static String DELETE_TIMESLOT_BY_ID = "/timeslots/{id}";
 
   public static String GET_REQUEST = "/requests/search";
-
   public static String REQUEST = "/requests";
+  public static String REQUEST_STATUS = "/requests/status";
+  public static String REQUEST_DESC = "/requests/description";
 
   public static String MEETINGS_SAVE = "/meetings/saveMeeting";
   public static String MEETINGS_GET_ALL = "/meetings/get_all";

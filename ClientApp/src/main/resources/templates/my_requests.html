@@ -22,24 +22,23 @@
       <p><strong>Description:</strong> <span th:text="${req.description}"></span></p>
       <p><strong>Status:</strong> <span th:text="${req.status}"></span></p>
 
-      <div class="form-container" th:if="${currentUserEmail == timeSlotUserEmail}">
+      
+      <!-- Delete Button -->
+      <form th:action="@{/request/remove(tid=${req.tid},uid=${req.requesterId})}" method="POST" style="display:inline;">
+        <input type="hidden" name="requesterEmail" th:value="${req.requesterEmail}" />
+        <button type="submit">Delete</button>
+      </form>
 
-        <div id="statusForm-${req.requesterId}-${req.tid}" style="display:block;">
-          <form th:action="@{/request/status(tid=${req.tid}, uid=${req.requesterId})}" method="POST">
-            <label for="status-${req.requesterId}-${req.tid}">Status:</label>
-            <select name="status" id="status-${req.requesterId}-${req.tid}">
-              <option th:value="undecided" th:text="'Select Status'" disabled selected></option>
-              <option th:value="undecided" th:text="'undecided'" th:selected="${req.status == 'undecided'}"></option>
-              <option th:value="approved" th:text="'approved'" th:selected="${req.status == 'approved'}"></option>
-              <option th:value="rejected" th:text="'rejected'" th:selected="${req.status == 'rejected'}"></option>
-            </select>
-            
-            <button type="submit">Update Status</button>
-          </form>
-        </div>
+      <div id="updateForm-${req.requesterId}-${req.tid}" class="updateForm" style="display:block;">
+        <form th:action="@{/request/description(tid=${req.tid},uid=${req.requesterId})}" method="POST">
+          <input type="hidden" name="requesterEmail" th:value="${req.requesterEmail}" />
+          
+          <label for="description-${req.requesterId}-${req.tid}">Description:</label>
+          <input type="text" name="description" th:value="${req.description}" required />
+
+          <button type="submit">Submit Update</button>
+        </form>
       </div>
-
-
       <hr>
     </li>
   </ul>
@@ -49,5 +48,6 @@
 <div th:if="${requests == null || #lists.isEmpty(requests)}">
   <p>No requests available.</p>
 </div>
+
 </body>
 </html>
