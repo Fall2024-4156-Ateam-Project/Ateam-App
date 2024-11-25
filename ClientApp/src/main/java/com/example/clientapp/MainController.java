@@ -377,26 +377,21 @@ public class MainController {
   public String getMyRequests(HttpServletRequest request, Model model) {
     String email = util.getCookie("email", request);
     String role = util.getCookie("role", request);
-//    if (!role.equals(Role.doctor)){
-//      return CompletableFuture.completedFuture( new ArrayList<>());
-//    }
-//    CompletableFuture<Triple<String, Boolean, List<TimeSlot>>>
     try{
       Triple<String, Boolean, List<Request>> result = requestService.getUserRequests(email).get();
       if (!result.getStatus()){
         model.addAttribute("error", result.getMessage());
-        return "requests";
+        return "my_requests";
       }
       model.addAttribute("requests", result.getData());
       for (Request req : result.getData()) {
       }
-      return "requests";
+      return "my_requests";
     } catch (Exception e) {
       // Handle unexpected errors
       model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());
       return "error"; // error page
     }
-//    return timeSlotService.getUserTimeSlots(email);
   }
 
 
@@ -404,10 +399,6 @@ public class MainController {
   public String getPatientRequests(@RequestParam String tid, HttpServletRequest request, Model model) {
     String email = util.getCookie("email", request);
     String role = util.getCookie("role", request);
-//    if (!role.equals(Role.doctor)){
-//      return CompletableFuture.completedFuture( new ArrayList<>());
-//    }
-//    CompletableFuture<Triple<String, Boolean, List<TimeSlot>>>
     try{
       Triple<String, Boolean, List<Request>> result = requestService.getTimeslotRequests(tid).get();
       if (!result.getStatus()){
@@ -415,16 +406,116 @@ public class MainController {
         return "requests";
       }
       model.addAttribute("requests", result.getData());
+      model.addAttribute("currentUserEmail", email);
+      model.addAttribute("timeSlotUserEmail", timeSlotService.getTimeSlot(Integer.parseInt(tid))
+            .get().getData().getUser().getEmail());
+
       return "requests";
     } catch (Exception e) {
       // Handle unexpected errors
       model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());
-      return "error"; // error page
+      return "error"; 
     }
-//    return timeSlotService.getUserTimeSlots(email);
+  }
+
+  @PostMapping("/request/status")
+  public String updateRequestStatus(
+      Model model,
+      @RequestParam int tid,
+      @RequestParam int uid,
+      String status,
+      HttpServletRequest request,
+      RedirectAttributes redirectAttributes) {
+    String email = util.getCookie("email", request);
+    if (!timeSlotService.getTimeSlot(tid).join().getData().getUser().getEmail().equals(email)) {
+      redirectAttributes.addFlashAttribute("error",
+          "Not authortized to update status");
+      return "redirect:/patient_requests?tid=" + String.valueOf(tid);
+    }
+    
+    String contentType = request.getContentType();
+    System.out.println("Content-Type: " + contentType);
+
+    try {
+      Pair<String, Boolean> result = requestService.updateRequestStatus(uid, tid, status);
+      System.out.println("result" + result);
+      if (!result.status()) {
+        redirectAttributes.addFlashAttribute("error", result.msg());
+        return "redirect:/patient_requests?tid=" + String.valueOf(tid);
+      }
+      return "redirect:/patient_requests?tid=" + String.valueOf(tid);
+    } catch (Exception e) {
+      redirectAttributes.addFlashAttribute("error",
+          "An unexpected error occurred: " + e.getMessage());
+      return "redirect:/home";
+    }
+  }
+
+  @PostMapping("/request/description")
+  public String updateRequestDescription(
+      Model model,
+      @RequestParam int tid,
+      @RequestParam int uid,
+      String description,
+      String requesterEmail,
+      HttpServletRequest request,
+      RedirectAttributes redirectAttributes) {
+    String email = util.getCookie("email", request);
+    if (!requesterEmail.equals(email)) {
+      redirectAttributes.addFlashAttribute("error",
+          "Not authortized to update description");
+      return "redirect:/my_requests";
+    }
+    try {
+      Pair<String, Boolean> result = requestService.updateRequestDescription(uid, tid, description);
+      System.out.println("result" + result);
+      if (!result.status()) {
+        redirectAttributes.addFlashAttribute("error", result.msg());
+        return "redirect:/my_requests";
+      }
+      return "redirect:/my_requests";
+    } catch (Exception e) {
+      redirectAttributes.addFlashAttribute("error",
+          "An unexpected error occurred: " + e.getMessage());
+      return "redirect:/home";
+    }
   }
 
 
+  @PostMapping("/request/remove")
+  public RedirectView removeRequest(Model model, @RequestParam int uid, @RequestParam int tid, 
+      HttpServletRequest request, String requesterEmail, RedirectAttributes redirectAttributes) {
+    String email = util.getCookie("email", request);
+    RedirectView redirectView = new RedirectView();
+    if (!requesterEmail.equals(email)) {
+      redirectAttributes.addFlashAttribute("error",
+          "Not authortized to update description");
+      
+      redirectView.setUrl("/my_requests");
+      return redirectView;
+    }
+    try {
+      Pair<String, Boolean> result = requestService.removeRequest(uid, tid);
+      System.out.println("result" + result);
+      if (!result.status()) {
+        redirectAttributes.addFlashAttribute("error", result.msg());
+        redirectView.setUrl("/my_requests");
+      } else {
+        redirectAttributes.addFlashAttribute("success", "TimeSlot removed successfully!");
+        redirectView.setUrl("/my_requests");
+      }
+      redirectView.setStatusCode(HttpStatus.SEE_OTHER); // Explicitly set to 303
+      return redirectView;
+
+    } catch (Exception e) {
+      redirectAttributes.addFlashAttribute("error",
+          "An unexpected error occurred: " + e.getMessage());
+      redirectView.setUrl("/my_requests");
+      redirectView.setStatusCode(HttpStatus.SEE_OTHER); // Explicitly set to 303
+      return redirectView;
+    }
+
+  }
 
   @GetMapping("/request_form")
   public String gotoRequestCreate(Model model, @RequestParam String tid, HttpServletRequest request) {
@@ -436,7 +527,6 @@ public class MainController {
 
 
   @PostMapping("/request_create_form")
-  @ResponseBody
   public String createRequest(String email,
                                String tid,
                                String description,
@@ -450,7 +540,7 @@ public class MainController {
         return "request_create_form";
       }
       model.addAttribute("success", "Request created successfully.");
-      return "home";
+      return "redirect:/timeSlot?tid=" + tid;
     } catch (Exception ex) {
       model.addAttribute("error", "An unexpected error occurred: " + ex.getMessage());
       return "request_create_form";

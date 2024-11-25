@@ -262,4 +262,75 @@ public class RequestService {
     }
   }
 
+  public Pair<String, Boolean> updateRequestStatus(int requesterId, int tid, String status) {
+    String url = UriComponentsBuilder.fromHttpUrl(
+            apiConfig.baseApi + apiConfig.REQUEST_STATUS + "?userid=" + 
+            String.valueOf(requesterId) + "&tid=" + String.valueOf(tid)).toUriString();
+
+    headers.add("apiKey", apiKey);
+    headers.add("Content-Type", "application/json");
+    HttpEntity<String> request = new HttpEntity<>("\"" + status + "\"", headers);
+    try {
+      ResponseEntity<String> rawResponse = restTemplate.exchange(
+          url,
+          HttpMethod.PUT,
+          request,
+          String.class
+      );
+      System.out.println("Response Body: " + rawResponse.getBody());
+      return new Pair<>(rawResponse.getBody(), true);
+    } catch (HttpClientErrorException | HttpServerErrorException e) {
+      System.out.println("Error Response Body: " + e.getResponseBodyAsString());
+      System.out.println("Error Response Status: " + e.getStatusCode());
+      return new Pair<>(e.getResponseBodyAsString(), false);
+    }
+  }
+
+  public Pair<String, Boolean> updateRequestDescription(int requesterId, int tid, String description) {
+    String url = UriComponentsBuilder.fromHttpUrl(
+            apiConfig.baseApi + apiConfig.REQUEST_DESC + "?userid=" + 
+            String.valueOf(requesterId) + "&tid=" + String.valueOf(tid)).toUriString();
+
+    headers.add("apiKey", apiKey);
+    HttpEntity<String> request = new HttpEntity<>(description, headers);
+    try {
+      ResponseEntity<String> rawResponse = restTemplate.exchange(
+          url,
+          HttpMethod.PUT,
+          request,
+          String.class
+      );
+      System.out.println("Response Body: " + rawResponse.getBody());
+      return new Pair<>(rawResponse.getBody(), true);
+    } catch (HttpClientErrorException | HttpServerErrorException e) {
+      System.out.println("Error Response Body: " + e.getResponseBodyAsString());
+      System.out.println("Error Response Status: " + e.getStatusCode());
+      return new Pair<>(e.getResponseBodyAsString(), false);
+    }
+  }
+
+  public Pair<String, Boolean> removeRequest(int requesterId, int tid) {
+    String url = UriComponentsBuilder.fromHttpUrl(
+            apiConfig.baseApi + apiConfig.REQUEST + "?userid=" + 
+            String.valueOf(requesterId) + "&tid=" + String.valueOf(tid)).toUriString();
+    Map<String, String> requestBody = new HashMap<>();
+    HttpEntity<Map<String, String>> request = generateRequest(requestBody);
+    try {
+      ResponseEntity<String> rawResponse = restTemplate.exchange(
+          url,
+          HttpMethod.DELETE,
+          request,
+          String.class
+      );
+      System.out.println("Response Body: " + rawResponse.getBody());
+      return new Pair<>(rawResponse.getBody(), true);
+    } catch (HttpClientErrorException | HttpServerErrorException e) {
+      System.out.println("Error Response Body: " + e.getResponseBodyAsString());
+      System.out.println("Error Response Status: " + e.getStatusCode());
+      return new Pair<>(e.getResponseBodyAsString(), false);
+    }
+
+  }
+
+
 }
