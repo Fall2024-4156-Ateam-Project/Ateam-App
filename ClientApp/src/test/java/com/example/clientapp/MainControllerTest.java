@@ -1,9 +1,57 @@
 package com.example.clientapp;
 
+import com.example.clientapp.apiService.RequestService;
+import com.example.clientapp.apiService.TimeSlotService;
+import com.example.clientapp.apiService.UserService;
+import com.example.clientapp.util.CommonTypes.Day;
+import com.example.clientapp.util.CommonTypes.Availability;
+import com.example.clientapp.util.Triple;
+import com.example.clientapp.util.MeetingResponse;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.example.clientapp.apiService.MeetingService;
+import com.example.clientapp.apiService.TimeSlotService;
+import com.example.clientapp.apiService.UserService;
+import com.example.clientapp.user.*;
+import com.example.clientapp.util.*;
+import com.example.clientapp.util.CommonTypes.Role;
+import static org.hamcrest.Matchers.hasSize;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.util.Optional;
+
+import java.net.URLEncoder;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.Banner.Mode;
+import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.view.RedirectView;
+import org.springframework.web.util.WebUtils;
+import com.example.clientapp.apiService.RequestService;
+import com.example.clientapp.apiService.TimeSlotService;
+import com.example.clientapp.apiService.UserService;
+import com.example.clientapp.apiService.MeetingService;
+import com.example.clientapp.apiService.TimeSlotService;
+import com.example.clientapp.util.CommonTypes.Day;
 import com.example.clientapp.user.AuthService;
 import com.example.clientapp.user.User;
+import com.example.clientapp.user.Doctor;
 import com.example.clientapp.util.JwtUtil;
-import com.example.clientapp.apiService.UserService;
 import com.example.clientapp.util.CommonTypes;
 import com.example.clientapp.util.Util;
 import com.example.clientapp.util.Pair;
@@ -18,6 +66,8 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.ui.Model;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -26,6 +76,9 @@ public class MainControllerTest {
 
   @InjectMocks
   private MainController mainController;
+
+  @Autowired
+  private MockMvc mockMvc;
 
   @Mock
   private AuthService authService;
@@ -40,7 +93,19 @@ public class MainControllerTest {
   private UserService userService;
 
   @Mock
+  private RequestService requestService;
+
+  @Mock
+  private TimeSlotService timeSlotService;
+
+  @Mock
+  private MeetingService meetingService;
+
+  @Mock
   private Model model;
+
+  @Mock
+  private RedirectAttributes redirectAttributes;
 
   private MockHttpServletRequest request;
   private MockHttpServletResponse response;
@@ -50,6 +115,8 @@ public class MainControllerTest {
     MockitoAnnotations.openMocks(this);
     request = new MockHttpServletRequest();
     response = new MockHttpServletResponse();
+    redirectAttributes = mock(RedirectAttributes.class);
+    mockMvc = MockMvcBuilders.standaloneSetup(mainController).build();
   }
 
   @Test
@@ -257,6 +324,7 @@ public class MainControllerTest {
     assertNotNull(result);
     assertEquals(1, result.join().size());
   }
+
   @Test
   public void testSearchUsersByName() throws Exception {
     // Arrange
@@ -270,4 +338,500 @@ public class MainControllerTest {
     assertNotNull(result);
     assertEquals(1, result.join().size());
   }
+
+
+  @Test
+  void testSearchDoctorsByPartialSpecialty() {
+    // Arrange
+    String specialty = "cardio";
+    List<User> mockDoctors = List.of(
+            new Doctor("doc1@example.com", "password1", "Dr. Cardiologist", CommonTypes.Role.doctor),
+            new Doctor("doc2@example.com", "password1", "Dr. Heart", CommonTypes.Role.doctor)
+    );
+
+    when(authService.searchDoctorsByPartialSpecialty(eq(specialty)))
+            .thenReturn(CompletableFuture.completedFuture(mockDoctors));
+
+    // Act
+    CompletableFuture<List<User>> result = mainController.searchDoctorsByPartialSpecialty(specialty);
+
+    // Assert
+    assertNotNull(result, "The result should not be null");
+    assertEquals(mockDoctors, result.join(), "The result should match the mock doctor list");
+    verify(authService, times(1)).searchDoctorsByPartialSpecialty(eq(specialty));
+  }
+
+  @Test
+  void testGetDoctorTimeSlots_Success() throws Exception {
+    // Arrange
+    String doctorEmail = "doc@example.com";
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.addHeader("Cookie", "email=user@example.com; role=doctor");
+
+    Model model = mock(Model.class);
+
+    List<TimeSlot> mockTimeSlots = List.of(new TimeSlot( LocalTime.of(9, 0), LocalTime.of(10, 0), Day.Monday, Day.Monday, CommonTypes.Availability.available, 1));
+    Triple<String, Boolean, List<TimeSlot>> mockResponse =
+            new Triple<>("Success", true, mockTimeSlots);
+
+    when(util.getCookie("email", request)).thenReturn("user@example.com");
+    when(util.getCookie("role", request)).thenReturn("doctor");
+    when(timeSlotService.getUserTimeSlots(doctorEmail)).thenReturn(CompletableFuture.completedFuture(mockResponse));
+
+    // Act
+    String view = mainController.getDoctorTimeSlots(doctorEmail, request, model);
+
+    // Assert
+    assertEquals("timeslots", view);
+    verify(model).addAttribute(eq("timeSlotsJson"), anyString());
+    verify(model).addAttribute("userEmail", doctorEmail);
+  }
+
+  @Test
+  void testGetDoctorTimeSlots_Failure() throws Exception {
+    // Arrange
+    String doctorEmail = "doc@example.com";
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.addHeader("Cookie", "email=user@example.com; role=doctor");
+
+    Model model = mock(Model.class);
+
+    Triple<String, Boolean, List<TimeSlot>> mockResponse =
+            new Triple<>("Failed to fetch timeslots", false, null);
+
+    when(util.getCookie("email", request)).thenReturn("user@example.com");
+    when(util.getCookie("role", request)).thenReturn("doctor");
+    when(timeSlotService.getUserTimeSlots(doctorEmail)).thenReturn(CompletableFuture.completedFuture(mockResponse));
+
+    // Act
+    String view = mainController.getDoctorTimeSlots(doctorEmail, request, model);
+
+    // Assert
+    assertEquals("timeslots", view);
+    verify(model).addAttribute("error", "Failed to fetch timeslots");
+  }
+
+  @Test
+  void testCreateTimeslot_Success() throws Exception {
+    // Arrange
+    String email = "user@example.com";
+    String startDay = "Monday";
+    String endDay = "Monday";
+    String startTime = "09:00";
+    String endTime = "10:00";
+    String availability = "available";
+
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.addHeader("Cookie", "email=user@example.com");
+
+    Model model = mock(Model.class);
+
+    Pair<String, Boolean> mockResponse = Pair.of("Timeslot created successfully", true);
+
+    when(util.getCookie("email", request)).thenReturn(email);
+    when(timeSlotService.createTimeslotWithMerge(email, startDay, endDay, startTime, endTime, availability))
+            .thenReturn(mockResponse);
+
+    // Act
+    String view = mainController.createTimeslot(startDay, endDay, startTime, endTime, availability, request, model);
+
+    // Assert
+    assertEquals("redirect:/home", view);
+    verify(model).addAttribute("success", "Timeslot created successfully.");
+  }
+
+  @Test
+  void testCreateTimeslot_Failure() throws Exception {
+    // Arrange
+    String email = "user@example.com";
+    String startDay = "Monday";
+    String endDay = "Monday";
+    String startTime = "09:00";
+    String endTime = "10:00";
+    String availability = "available";
+
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.addHeader("Cookie", "email=user@example.com");
+
+    Model model = mock(Model.class);
+
+    Pair<String, Boolean> mockResponse = Pair.of("Failed to create timeslot", false);
+
+    when(util.getCookie("email", request)).thenReturn(email);
+    when(timeSlotService.createTimeslotWithMerge(email, startDay, endDay, startTime, endTime, availability))
+            .thenReturn(mockResponse);
+
+    // Act
+    String view = mainController.createTimeslot(startDay, endDay, startTime, endTime, availability, request, model);
+
+    // Assert
+    assertEquals("timeslot_create_form", view);
+    verify(model).addAttribute("error", "Failed to create timeslot");
+  }
+
+  @Test
+  void testGetMyRequests() throws Exception {
+    // Arrange
+    String email = "test@example.com";
+    Request mockRequest = new Request();
+    mockRequest.setRequesterId(1);
+    mockRequest.setTid(101);
+    mockRequest.setStatus(CommonTypes.RequestStatus.undecided);
+    mockRequest.setDescription("Sample description");
+    mockRequest.setRequesterName("Requester Name");
+    mockRequest.setRequesterEmail(email);
+
+    List<Request> mockRequests = List.of(mockRequest);
+    Triple<String, Boolean, List<Request>> mockResponse = new Triple<>("Success", true, mockRequests);
+
+    when(util.getCookie("email", request)).thenReturn(email);
+    when(requestService.getUserRequests(email)).thenReturn(CompletableFuture.completedFuture(mockResponse));
+
+    // Act
+    String viewName = mainController.getMyRequests( request,model);
+
+    // Assert
+    assertEquals("my_requests", viewName);
+    verify(util).getCookie("email", request);
+    verify(requestService).getUserRequests(email);
+    verify(model).addAttribute("requests", mockRequests);
+  }
+
+
+  @Test
+  void testGetPatientRequests() throws Exception {
+    // Arrange
+    String email = "doctor@example.com";
+    String patientEmail = "patient@example.com";
+    int tid = 101;
+
+    // Create mock patient (requester)
+    Patient mockPatient = new Patient(patientEmail, "password", "John", CommonTypes.Role.patient);
+
+    // Create mock request
+    Request mockRequest = new Request();
+    mockRequest.setRequesterId(1);
+    mockRequest.setTid(tid);
+    mockRequest.setStatus(CommonTypes.RequestStatus.undecided);
+    mockRequest.setDescription("Need consultation");
+    mockRequest.setRequesterName(mockPatient.getName());
+    mockRequest.setRequesterEmail(mockPatient.getEmail());
+
+    List<Request> mockRequests = List.of(mockRequest);
+    Triple<String, Boolean, List<Request>> mockResponse = new Triple<>("Success", true, mockRequests);
+
+    // Mock service calls
+    when(util.getCookie("email", request)).thenReturn(email);
+    when(requestService.getTimeslotRequests(String.valueOf(tid)))
+            .thenReturn(CompletableFuture.completedFuture(mockResponse));
+
+    // Create a mock TimeSlot object
+    TimeSlot mockTimeSlot = new TimeSlot(
+            LocalTime.of(9, 0),
+            LocalTime.of(17, 0),
+            CommonTypes.Day.Monday,
+            CommonTypes.Day.Friday,
+            CommonTypes.Availability.available,
+            tid
+    );
+
+    when(timeSlotService.getTimeSlot(tid))
+            .thenReturn(CompletableFuture.completedFuture(new Triple<>("Success", true, mockTimeSlot)));
+
+    String viewName = mainController.getPatientRequests(String.valueOf(tid), (HttpServletRequest) request, model);
+
+    System.out.println("Returned View Name: " + viewName);
+    assertEquals("error", viewName);
+    verify(model).addAttribute("requests", mockRequests);
+
+  }
+
+  @Test
+  void testUpdateRequestStatus() throws Exception {
+    // Arrange
+    int tid = 101;
+    int uid = 1;
+    String status = "approved";
+    String email = "doctor@example.com";
+
+    // Create a mock User object
+    User mockUser = new User();
+    mockUser.setEmail(email);
+    TimeSlot mockTimeSlot = new TimeSlot(
+            LocalTime.of(9, 0),
+            LocalTime.of(17, 0),
+            CommonTypes.Day.Monday,
+            CommonTypes.Day.Friday,
+            CommonTypes.Availability.available,
+            tid
+    );
+    mockTimeSlot.setUser(mockUser);  // Ensure the user is set
+
+    // Mock service calls
+    when(util.getCookie("email", request)).thenReturn(email);
+    when(timeSlotService.getTimeSlot(tid))
+            .thenReturn(CompletableFuture.completedFuture(new Triple<>("Success", true, mockTimeSlot)));
+
+    // Mock request status update service call
+    when(requestService.updateRequestStatus(uid, tid, status))
+            .thenReturn(new Pair<>("Success", true));
+
+    // Act
+    String redirect = mainController.updateRequestStatus(model, tid, uid, status, request, redirectAttributes);
+
+    // Assert
+    assertEquals("redirect:/patient_requests?tid=" + tid, redirect);  // Ensure proper redirection
+    verify(requestService).updateRequestStatus(uid, tid, status);  // Verify service method is called
+  }
+
+
+
+  @Test
+  void testUpdateRequestDescription() throws Exception {
+    // Arrange
+    int tid = 101;
+    int uid = 1;
+    String description = "Updated description";
+    String requesterEmail = "patient@example.com";
+    String email = "patient@example.com";
+
+    when(util.getCookie("email", request)).thenReturn(email);
+    when(requestService.updateRequestDescription(uid, tid, description))
+            .thenReturn(new Pair<>("Success", true));
+
+    // Act
+    String redirect = mainController.updateRequestDescription(
+            model, tid, uid, description, requesterEmail, request, redirectAttributes);
+
+    // Assert
+    assertEquals("redirect:/my_requests", redirect);
+    verify(requestService).updateRequestDescription(uid, tid, description);
+  }
+
+
+  @Test
+  void testRemoveRequest() throws Exception {
+    // Arrange
+    int tid = 101;
+    int uid = 1;
+    String requesterEmail = "patient@example.com";
+    String email = "patient@example.com";
+
+    when(util.getCookie("email", request)).thenReturn(email);
+    when(requestService.removeRequest(uid, tid)).thenReturn(new Pair<>("Success", true));
+
+    RedirectView redirectView = mainController.removeRequest(
+            model, uid, tid, request, requesterEmail, redirectAttributes);
+
+    assertEquals("/my_requests", redirectView.getUrl());
+
+    verify(requestService).removeRequest(uid, tid);
+  }
+  @Test
+  void testGotoRequestCreate() throws Exception {
+    String tid = "1";
+    String email = "test@example.com";
+
+    MockHttpServletRequest request = new MockHttpServletRequest();
+
+    when(util.getCookie("email", request)).thenReturn(email);
+
+    mockMvc.perform(get("/request_form").param("tid", tid))
+            .andExpect(status().isOk())
+            .andExpect(view().name("request_create_form"))
+            .andExpect(model().attribute("tid", tid));
+  }
+
+  @Test
+  void testCreateRequestSuccess() throws Exception {
+    String email = "test@example.com";
+    String tid = "1";
+    String description = "Test request";
+    String status = "pending";
+
+    when(requestService.createRequest(email, tid, description, status))
+            .thenReturn(new Pair<>("Success", true));
+
+    mockMvc.perform(post("/request_create_form")
+                    .param("email", email)
+                    .param("tid", tid)
+                    .param("description", description)
+                    .param("status", status))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/timeSlot?tid=" + tid))
+            .andExpect(model().attributeDoesNotExist("error"));
+  }
+
+  @Test
+  void testViewMyTimeSlot() throws Exception {
+    String email = "doctor@example.com";
+
+    MockHttpServletRequest request = new MockHttpServletRequest();
+
+    when(util.getCookie("email", request)).thenReturn(email);
+
+    mockMvc.perform(get("/view_my_timeslots").requestAttr("request", request))
+            .andExpect(status().is3xxRedirection());
+  }
+
+
+  @Test
+  void testGetTimeSlotDetailFailure() throws Exception {
+    int tid = 1;
+
+    Triple<String, Boolean, TimeSlot> result = new Triple<>("Failed to retrieve timeslot", false, null);
+    when(timeSlotService.getTimeSlot(tid)).thenReturn(CompletableFuture.completedFuture(result));
+
+    mockMvc.perform(get("/timeSlot").param("tid", String.valueOf(tid)))
+            .andExpect(status().isOk())
+            .andExpect(view().name("home"))
+            .andExpect(model().attribute("error", "Failed to retrieve timeslot"));
+  }
+
+  @Test
+  void testGetTimeSlotDetailException() throws Exception {
+    int tid = 1;
+
+    when(timeSlotService.getTimeSlot(tid)).thenReturn(CompletableFuture.failedFuture(new RuntimeException("An unexpected error occurred")));
+
+    mockMvc.perform(get("/timeSlot").param("tid", String.valueOf(tid)))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/home"))
+            .andExpect(flash().attribute("error", "An unexpected error occurred: java.lang.RuntimeException: An unexpected error occurred"));
+  }
+
+  @Test
+  void testUpdateTimeSlot() throws Exception {
+    // Arrange
+    int tid = 1;
+    String startDay = "Monday";
+    String endDay = "Friday";
+    String startTime = "09:00";
+    String endTime = "17:00";
+    String availability = "available";
+    String email = "test@example.com";
+
+    Pair<String, Boolean> mockResponse = Pair.of("TimeSlot updated successfully", true);
+
+    // Mock the cookie retrieval
+    when(util.getCookie(eq("email"), any(HttpServletRequest.class))).thenReturn(email);
+    // Mock the service call
+    when(timeSlotService.updateTimeSlot(eq(tid), eq(email), eq(startDay), eq(endDay), eq(startTime), eq(endTime), eq(availability)))
+            .thenReturn(mockResponse);
+
+    // Act
+    mockMvc.perform(post("/timeSlot/update")
+                    .param("tid", String.valueOf(tid))
+                    .param("startDay", startDay)
+                    .param("endDay", endDay)
+                    .param("startTime", startTime)
+                    .param("endTime", endTime)
+                    .param("availability", availability))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/view_my_timeslots"));
+  }
+
+
+  @Test
+  void testRemoveTimeSlot() throws Exception {
+    // Arrange
+    int tid = 1;
+    String email = "test@example.com";
+    Pair<String, Boolean> mockResponse = Pair.of("TimeSlot removed successfully", true);
+
+    when(util.getCookie(eq("email"), any(HttpServletRequest.class))).thenReturn(email);
+    when(timeSlotService.removeTimeSlot(eq(tid), eq(email)))
+            .thenReturn(mockResponse);
+
+    mockMvc.perform(delete("/timeSlot/remove")
+                    .param("tid", String.valueOf(tid)))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/view_my_timeslots"))
+            .andExpect(flash().attribute("success", "TimeSlot removed successfully!"));
+  }
+  @Test
+  void testViewMyMeetings() throws Exception {
+    // Arrange
+    String email = "test@example.com";
+    List<Meeting> meetings = Arrays.asList(new Meeting(), new Meeting()); // Mock meetings list
+    when(util.getCookie(eq("email"), any(HttpServletRequest.class))).thenReturn(email);
+    when(meetingService.getMyMeetings(email)).thenReturn(CompletableFuture.completedFuture(meetings));
+
+    // Act & Assert
+    mockMvc.perform(get("/view_my_meetings"))
+            .andExpect(status().isOk());
+  }
+
+
+  @Test
+  void testCreateMeeting_Success() throws Exception {
+    // Arrange
+    String email = "test@example.com";
+    Meeting meeting = new Meeting();
+    meeting.setParticipantEmail("participant@example.com");
+
+    when(util.getCookie("email", null)).thenReturn(email);
+    when(meetingService.createMeeting(any(Meeting.class)))
+            .thenReturn(CompletableFuture.completedFuture(new MeetingResponse("Meeting created successfully!", true)));
+
+    // Act & Assert
+    mockMvc.perform(post("/create_meeting")
+                    .param("participantEmail", "participant@example.com"))
+            .andExpect(status().isOk());
+  }
+
+
+  @Test
+  void testCreateMeeting_MissingOrganizerEmail() throws Exception {
+    // Arrange
+    Meeting meeting = new Meeting();
+    when(util.getCookie("email", null)).thenReturn(null);
+
+    // Act & Assert
+    mockMvc.perform(post("/create_meeting")
+                    .param("participantEmail", "participant@example.com"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("meeting_create_form"))
+            .andExpect(model().attributeExists("error"))
+            .andExpect(model().attribute("error", "Organizer email is missing."));
+  }
+
+  @Test
+  void testCreateMeeting_MissingParticipantEmail() throws Exception {
+    // Arrange
+    String email = "test@example.com";
+    Meeting meeting = new Meeting();
+    meeting.setOrganizerEmail(email);
+
+    when(util.getCookie("email", null)).thenReturn(email);
+
+    // Act & Assert
+    mockMvc.perform(post("/create_meeting"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("meeting_create_form"))
+            .andExpect(model().attributeExists("error"))
+            .andExpect(model().attribute("error", "Organizer email is missing."));
+  }
+
+  @Test
+  void testCreateMeeting_Failure() throws Exception {
+    // Arrange
+    String email = "test@example.com";
+    Meeting meeting = new Meeting();
+    meeting.setOrganizerEmail(email);
+    meeting.setParticipantEmail("participant@example.com");
+
+    when(util.getCookie("email", null)).thenReturn(email);
+    when(meetingService.createMeeting(any(Meeting.class)))
+            .thenReturn(CompletableFuture.completedFuture(new MeetingResponse("Failed to create meeting", false)));
+
+    mockMvc.perform(post("/create_meeting"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("meeting_create_form"))
+            .andExpect(model().attributeExists("error"))
+            .andExpect(model().attribute("error", "Organizer email is missing."));
+  }
+
+
+
 }
