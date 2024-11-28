@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -726,4 +727,22 @@ public class MainController {
       return "meeting_create_form";
     }
   }
+
+  @DeleteMapping("/delete_meeting")
+  @ResponseBody
+  public ResponseEntity<MeetingResponse> deleteMeeting(@RequestParam("mid") int meetingId, HttpServletRequest request) {
+    String email = util.getCookie("email", request);
+    if (email == null || email.isEmpty()) {
+      return new ResponseEntity<>(new MeetingResponse("Unauthorized: Email not found.", false), HttpStatus.UNAUTHORIZED);
+    }
+
+    MeetingResponse response = meetingService.deleteMeeting(meetingId);
+    if (response.isStatus()) {
+      return new ResponseEntity<>(response, HttpStatus.NO_CONTENT);
+    } else {
+      return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+
 }

@@ -150,4 +150,26 @@ public class MeetingService {
     });
   }
 
+  public MeetingResponse deleteMeeting(int meetingId) {
+    String url = UriComponentsBuilder.fromHttpUrl(apiConfig.baseApi + apiConfig.MEETINGS_DELETE)
+            .queryParam("mid", meetingId)
+            .toUriString();
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.add("apiKey", apiKey);
+    HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+    try {
+      ResponseEntity<Void> response = restTemplate.exchange(url, HttpMethod.DELETE, requestEntity, Void.class);
+      if (response.getStatusCode() == HttpStatus.NO_CONTENT) {
+        return new MeetingResponse("Meeting deleted successfully.", true);
+      } else {
+        return new MeetingResponse("Failed to delete meeting.", false);
+      }
+    } catch (HttpClientErrorException | HttpServerErrorException e) {
+      return new MeetingResponse("Error deleting meeting: " + e.getResponseBodyAsString(), false);
+    } catch (Exception e) {
+      return new MeetingResponse("Unexpected error: " + e.getMessage(), false);
+    }
+  }
 }
