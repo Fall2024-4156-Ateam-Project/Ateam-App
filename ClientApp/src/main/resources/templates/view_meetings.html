@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>View My Meetings</title>
   <!-- Link the meetings.css file -->
   <link rel="stylesheet" th:href="@{/css/view_meetings.css}">
@@ -12,6 +12,46 @@
 
 <div class="meeting-container">
   <h1>My Meetings</h1>
+
+  <!-- Filter Section -->
+  <div class="filters">
+    <form id="filterForm">
+      <div>
+        <label for="typeFilter">Type:</label>
+        <select id="typeFilter" name="type">
+          <option value="">All</option>
+          <option value="group">Group</option>
+          <option value="one_on_one">One-on-One</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="statusFilter">Status:</label>
+        <select id="statusFilter" name="status">
+          <option value="">All</option>
+          <option value="Valid">Valid</option>
+          <option value="Invalid">Invalid</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="recurrenceFilter">Recurrence:</label>
+        <select id="recurrenceFilter" name="recurrence">
+          <option value="">All</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="none">None</option>
+        </select>
+      </div>
+
+      <div>
+        <button type="button" id="applyFilters">Apply Filters</button>
+        <button type="button" id="resetFilters">Reset Filters</button>
+      </div>
+    </form>
+  </div>
+
   <div id="meetingList">
     <!-- Meeting items will be dynamically injected here -->
   </div>

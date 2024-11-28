@@ -1,21 +1,21 @@
 package com.example.clientapp.user;
 
 import com.example.clientapp.util.CommonTypes;
-import com.example.clientapp.util.CommonTypes.Availability;
 import com.example.clientapp.util.CommonTypes.Day;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalTime;
 
 public class Meeting {
+  private int mid; // 添加 mid 字段
   private String description;
   private CommonTypes.Recurrence recurrence;
   private CommonTypes.MeetingType type;
   private CommonTypes.MeetingStatus status;
   private String organizerEmail;
   private String participantEmail;
-  private LocalTime  startTime;
-  private LocalTime  endTime;
+  private LocalTime startTime;
+  private LocalTime endTime;
   @JsonProperty("startDay")
   private CommonTypes.Day startDay;
   @JsonProperty("endDay")
@@ -27,10 +27,11 @@ public class Meeting {
     // Default constructor
   }
 
-  public Meeting(String description, CommonTypes.Recurrence recurrence,
+  public Meeting(int mid, String description, CommonTypes.Recurrence recurrence,
                  CommonTypes.MeetingType type, CommonTypes.MeetingStatus status,
                  String organizerEmail, String participantEmail,
                  LocalTime startTime, LocalTime endTime, CommonTypes.Day startDay, CommonTypes.Day endDay) {
+    this.mid = mid;
     this.description = description;
     this.recurrence = recurrence;
     this.type = type;
@@ -39,8 +40,17 @@ public class Meeting {
     this.participantEmail = participantEmail;
     this.startTime = startTime;
     this.endTime = endTime;
-    this.startDay=startDay;
-    this.endDay=endDay;
+    this.startDay = startDay;
+    this.endDay = endDay;
+  }
+
+  // Getters and Setters
+  public int getMid() {
+    return mid;
+  }
+
+  public void setMid(int mid) {
+    this.mid = mid;
   }
 
   public String getDescription() {
