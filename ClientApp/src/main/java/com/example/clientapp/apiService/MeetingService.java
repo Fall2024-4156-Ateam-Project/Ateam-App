@@ -1,13 +1,13 @@
 package com.example.clientapp.apiService;
 
 import com.example.clientapp.user.Meeting;
+import com.example.clientapp.user.Participant;
 import com.example.clientapp.user.User;
 import com.example.clientapp.util.MeetingResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.example.clientapp.util.Triple;
-import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,7 +92,6 @@ public class MeetingService {
           return new MeetingResponse("User not found with the given email: " + meeting.getOrganizerEmail(), false);
         }
 
-       // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
         String url = apiConfig.baseApi + apiConfig.MEETINGS_SAVE;
         System.out.println("API URL: " + url);
         Map<String, Object> requestBody = new HashMap<>();
@@ -129,19 +128,27 @@ public class MeetingService {
 
   public CompletableFuture<List<Meeting>> getMyMeetings(String email) {
 
-    String url = apiConfig.baseApi + apiConfig.MEETINGS_FIND_BY_EMAIL + "?email=" +email;
+    String url = apiConfig.baseApi + apiConfig.MEETINGS_FIND_BY_EMAIL + "?email=" + email;
     System.out.println("url: " + url);
-    // Use generateRequestObject to send the map as the request body
     HttpEntity<Void> request = generateRequest();
     System.out.println("request: " + request);
     return CompletableFuture.supplyAsync(() -> {
       try {
-        // Send the GET request to the server with the map (containing user details) as the body
+        // Fetch meetings
         ResponseEntity<String> rawResponse = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
         List<Meeting> meetings = objectMapper.readValue(
                 rawResponse.getBody(), new TypeReference<List<Meeting>>() {}
         );
-        return meetings;  // Directly return the List<Meeting>
+
+        // Fetch participants for each meeting
+        List<Meeting> meetingsWithParticipants = new ArrayList<>();
+        for (Meeting meeting : meetings) {
+          List<Participant> participants = fetchParticipantsForMeeting(meeting);
+          meeting.setParticipants(participants);
+          meetingsWithParticipants.add(meeting);
+        }
+
+        return meetingsWithParticipants;  // Return the List<Meeting> with participants
       } catch (HttpClientErrorException | HttpServerErrorException e) {
         throw new RuntimeException("Unexpected error occurred: " + e.getMessage(), e);
       } catch (JsonProcessingException e) {
@@ -150,10 +157,30 @@ public class MeetingService {
     });
   }
 
+  private List<Participant> fetchParticipantsForMeeting(Meeting meeting) {
+    String url = apiConfig.baseApi + apiConfig.PARTICIPANTS_FIND_BY_MEETING + "?mid=" + meeting.getMid();
+    System.out.println("Fetching participants for meeting ID: " + meeting.getMid());
+
+    HttpEntity<Void> requestEntity = generateRequest();
+
+    try {
+      ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+      List<Participant> participants = objectMapper.readValue(
+              response.getBody(), new TypeReference<List<Participant>>() {}
+      );
+      return participants;
+    } catch (HttpClientErrorException | HttpServerErrorException e) {
+      System.out.println("Error fetching participants: " + e.getResponseBodyAsString());
+      return Collections.emptyList();
+    } catch (JsonProcessingException e) {
+      System.out.println("Error parsing participants JSON: " + e.getMessage());
+      return Collections.emptyList();
+    }
+  }
+
+
   public MeetingResponse deleteMeeting(int meetingId) {
-    String url = UriComponentsBuilder.fromHttpUrl(apiConfig.baseApi + apiConfig.MEETINGS_DELETE)
-            .queryParam("mid", meetingId)
-            .toUriString();
+    String url = apiConfig.baseApi + apiConfig.MEETINGS_DELETE + "?mid=" + meetingId;
 
     HttpHeaders headers = new HttpHeaders();
     headers.add("apiKey", apiKey);
