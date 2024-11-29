@@ -1,13 +1,14 @@
 package com.example.clientapp.user;
 
 import com.example.clientapp.util.CommonTypes;
-import com.example.clientapp.util.CommonTypes.Day;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalTime;
+import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Meeting {
-  private int mid; // 添加 mid 字段
+  private int mid;
   private String description;
   private CommonTypes.Recurrence recurrence;
   private CommonTypes.MeetingType type;
@@ -16,11 +17,17 @@ public class Meeting {
   private String participantEmail;
   private LocalTime startTime;
   private LocalTime endTime;
+
   @JsonProperty("startDay")
   private CommonTypes.Day startDay;
+
   @JsonProperty("endDay")
   private CommonTypes.Day endDay;
+
   private LocalTime CreatedAt;
+
+  // **New Field: List of Participants**
+  private List<Participant> participants;
 
   // Constructors
   public Meeting() {
@@ -61,22 +68,6 @@ public class Meeting {
     this.description = description;
   }
 
-  public String getOrganizerEmail() {
-    return organizerEmail;
-  }
-
-  public void setOrganizerEmail(String organizerEmail) {
-    this.organizerEmail = organizerEmail;
-  }
-
-  public String getParticipantEmail() {
-    return participantEmail;
-  }
-
-  public void setParticipantEmail(String participantEmail) {
-    this.participantEmail = participantEmail;
-  }
-
   public CommonTypes.Recurrence getRecurrence() {
     return recurrence;
   }
@@ -101,6 +92,22 @@ public class Meeting {
     this.status = status;
   }
 
+  public String getOrganizerEmail() {
+    return organizerEmail;
+  }
+
+  public void setOrganizerEmail(String organizerEmail) {
+    this.organizerEmail = organizerEmail;
+  }
+
+  public String getParticipantEmail() {
+    return participantEmail;
+  }
+
+  public void setParticipantEmail(String participantEmail) {
+    this.participantEmail = participantEmail;
+  }
+
   public LocalTime getStartTime() {
     return startTime;
   }
@@ -116,7 +123,6 @@ public class Meeting {
   public void setEndTime(LocalTime endTime) {
     this.endTime = endTime;
   }
-
 
   public LocalTime getCreatedAt() {
     return CreatedAt;
@@ -140,5 +146,14 @@ public class Meeting {
 
   public void setEndDay(CommonTypes.Day endDay) {
     this.endDay = endDay;
+  }
+
+  // **Getter and Setter for Participants**
+  public List<Participant> getParticipants() {
+    return participants;
+  }
+
+  public void setParticipants(List<Participant> participants) {
+    this.participants = participants;
   }
 }
