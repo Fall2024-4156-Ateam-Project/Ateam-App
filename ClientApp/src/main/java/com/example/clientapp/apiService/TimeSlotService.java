@@ -223,7 +223,7 @@ public class TimeSlotService {
     return new HttpEntity<>(headers);
   }
 
-  private Map<String, Object> findUserByEmail(String email) {
+  public Map<String, Object> findUserByEmail(String email) {
     String url = apiConfig.baseApi + apiConfig.USER_FIND_BY_EMAIL + "?email=" + email;
     System.out.println("Request URL: " + url);
 
