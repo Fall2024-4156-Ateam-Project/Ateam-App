@@ -126,29 +126,56 @@ public class MeetingService {
     });
   }
 
-  public CompletableFuture<List<Meeting>> getMyMeetings(String email) {
+  public CompletableFuture<List<Map<String, Object>>> getMyMeetings(String email) {
+    Map<String, Object> user = findUserByEmail(email);
+    System.out.println("User Object: " + user);
 
-    String url = apiConfig.baseApi + apiConfig.MEETINGS_FIND_BY_EMAIL + "?email=" + email;
+    if (user == null) {
+      return CompletableFuture.failedFuture(new RuntimeException("User not found with the given email: " + email));
+    }
+
+    String url = apiConfig.baseApi + apiConfig.PARTICIPANTS_FIND_BY_USER + "?uid=" + user.get("uid");
     System.out.println("url: " + url);
     HttpEntity<Void> request = generateRequest();
     System.out.println("request: " + request);
+
     return CompletableFuture.supplyAsync(() -> {
       try {
-        // Fetch meetings
+        // Fetch meetings for the patient role
         ResponseEntity<String> rawResponse = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
-        List<Meeting> meetings = objectMapper.readValue(
-                rawResponse.getBody(), new TypeReference<List<Meeting>>() {}
+        System.out.println("rawResponse: " + rawResponse.getBody());
+
+        // Parse the response for patients
+        List<Map<String, Object>> rawData = objectMapper.readValue(
+                rawResponse.getBody(), new TypeReference<List<Map<String, Object>>>() {}
         );
 
-        // Fetch participants for each meeting
-        List<Meeting> meetingsWithParticipants = new ArrayList<>();
-        for (Meeting meeting : meetings) {
+        List<Map<String, Object>> meetingsWithRoleAndParticipants = new ArrayList<>();
+
+        for (Map<String, Object> item : rawData) {
+          // Extract the meeting data and convert it to a Meeting object
+          Map<String, Object> meetingData = (Map<String, Object>) item.get("meeting");
+          Meeting meeting = objectMapper.convertValue(meetingData, Meeting.class);
+
+          // Extract the role
+          String role = (String) item.get("role");
+
+          // Fetch participants for the meeting
           List<Participant> participants = fetchParticipantsForMeeting(meeting);
-          meeting.setParticipants(participants);
-          meetingsWithParticipants.add(meeting);
+          meeting.setParticipants(participants); // Set participants in the meeting object
+
+          // Create a map to store the Meeting, role, and participants
+          Map<String, Object> meetingRoleMap = new HashMap<>();
+          meetingRoleMap.put("meeting", meeting); // Store the updated meeting object
+          meetingRoleMap.put("role", role); // Store the role
+
+          // Add the map to the result list
+          meetingsWithRoleAndParticipants.add(meetingRoleMap);
         }
 
-        return meetingsWithParticipants;  // Return the List<Meeting> with participants
+
+        System.out.println("meetingsWithRoleAndParticipants: " + meetingsWithRoleAndParticipants);
+        return meetingsWithRoleAndParticipants; // Return list of Map<String, Object> containing meeting and role
       } catch (HttpClientErrorException | HttpServerErrorException e) {
         throw new RuntimeException("Unexpected error occurred: " + e.getMessage(), e);
       } catch (JsonProcessingException e) {
@@ -156,7 +183,78 @@ public class MeetingService {
       }
     });
   }
+    /*
+    System.out.println("role: " + role);
 
+    String url;
+    HttpEntity<?> request;
+    if (role.equals("patient")) {
+      Map<String, Object> user = findUserByEmail(email);
+      System.out.println("User Object: " + user);
+
+      if (user == null) {
+        return CompletableFuture.failedFuture(new RuntimeException("User not found with the given email: " + email));
+      }
+      url = apiConfig.baseApi + apiConfig.PARTICIPANTS_FIND_BY_USER + "?uid=" + user.get("uid");
+      System.out.println("url: " + url);
+      request = generateRequest();
+      System.out.println("request: " + request);
+    }
+    else{
+      url = apiConfig.baseApi + apiConfig.MEETINGS_FIND_BY_EMAIL + "?email=" + email;
+      System.out.println("url: " + url);
+      request = generateRequest();
+      System.out.println("request: " + request);
+    }
+    return CompletableFuture.supplyAsync(() -> {
+      try {
+
+        if (role.equals("patient")) {
+          // Fetch meetings
+          System.out.println("url: " + url);
+          System.out.println("request: " + request);
+          ResponseEntity<String> rawResponse = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
+          System.out.println("rawResponse: " + rawResponse.getBody());
+          // Parse the response for patients
+          List<Map<String, Object>> rawData = objectMapper.readValue(
+                  rawResponse.getBody(), new TypeReference<List<Map<String, Object>>>() {
+                  }
+          );
+
+          // Extract only the "meeting" attribute
+          List<Meeting> meetings = new ArrayList<>();
+          for (Map<String, Object> item : rawData) {
+            Map<String, Object> meetingData = (Map<String, Object>) item.get("meeting");
+            Meeting meeting = objectMapper.convertValue(meetingData, Meeting.class);
+            meetings.add(meeting);
+          }
+
+          return meetings; // Return only the list of meetings for patients}
+        } else {
+          ResponseEntity<String> rawResponse = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
+          List<Meeting> meetings = objectMapper.readValue(
+                  rawResponse.getBody(), new TypeReference<List<Meeting>>() {
+                  }
+          );
+
+          // Fetch participants for each meeting
+          List<Meeting> meetingsWithParticipants = new ArrayList<>();
+          for (Meeting meeting : meetings) {
+            List<Participant> participants = fetchParticipantsForMeeting(meeting);
+            meeting.setParticipants(participants);
+            meetingsWithParticipants.add(meeting);
+          }
+
+          return meetingsWithParticipants;  // Return the List<Meeting> with participants
+        }
+      } catch (HttpClientErrorException | HttpServerErrorException e) {
+        throw new RuntimeException("Unexpected error occurred: " + e.getMessage(), e);
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException("JSON processing error: " + e.getMessage(), e);
+      }
+    });
+  }
+*/
   private List<Participant> fetchParticipantsForMeeting(Meeting meeting) {
     String url = apiConfig.baseApi + apiConfig.PARTICIPANTS_FIND_BY_MEETING + "?mid=" + meeting.getMid();
     System.out.println("Fetching participants for meeting ID: " + meeting.getMid());

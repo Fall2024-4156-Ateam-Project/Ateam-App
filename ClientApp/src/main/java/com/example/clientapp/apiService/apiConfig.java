@@ -44,4 +44,5 @@ public class apiConfig {
   public static String MEETINGS_DELETE = "/meetings";
 
   public static String PARTICIPANTS_FIND_BY_MEETING = "/participants/findByMeeting";
+  public static String PARTICIPANTS_FIND_BY_USER = "/participants/findByUser";
 }

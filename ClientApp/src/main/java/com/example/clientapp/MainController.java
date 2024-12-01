@@ -669,8 +669,9 @@ public class MainController {
 
   @GetMapping("/view_my_meetings")
   @ResponseBody
-  public CompletableFuture<List<Meeting>> viewMyMeetings(HttpServletRequest request, Model model) {
+  public CompletableFuture<List<Map<String, Object>>> viewMyMeetings(HttpServletRequest request, Model model) {
     String email = util.getCookie("email", request);
+    String role = util.getCookie("role", request);
     return meetingService.getMyMeetings(email);
   }
 
