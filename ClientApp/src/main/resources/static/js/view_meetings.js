@@ -1,6 +1,6 @@
-let meetings = []; // 存储已获取的会议
+let meetings = []; // Store fetched meetings
 
-// 获取指定名称的cookie值
+// Get cookie value by name
 function getCookie(name) {
   const cookieArr = document.cookie.split(";");
   for (let i = 0; i < cookieArr.length; i++) {
@@ -9,10 +9,10 @@ function getCookie(name) {
       return decodeURIComponent(cookie.substring(name.length + 1));
     }
   }
-  return null; // 如果未找到cookie则返回null
+  return null; // Return null if cookie is not found
 }
 
-// 获取并显示登录用户的所有会议
+// Fetch and display all meetings with roles
 function fetchMyMeetings() {
   console.log("Fetching all meetings...");
 
@@ -26,7 +26,7 @@ function fetchMyMeetings() {
       return;
     }
 
-    // 检查响应是否为有效的JSON格式
+    // Check if response is valid JSON
     try {
       meetings = JSON.parse(xhr.responseText);
       displayMeetings(meetings);
@@ -35,30 +35,33 @@ function fetchMyMeetings() {
       alert("Failed to parse meetings data.");
     }
   };
-  xhr.open("GET", "/view_my_meetings"); // 确保此URL与后端控制器匹配
+  xhr.open("GET", "/view_my_meetings"); // Ensure this URL matches the backend endpoint
   xhr.send();
 }
 
-// 显示会议列表
+// Display meeting list with role
 function displayMeetings(meetingsToDisplay) {
   const meetingList = document.getElementById("meetingList");
-  meetingList.innerHTML = ""; // 清除现有列表
+  meetingList.innerHTML = ""; // Clear existing list
 
-  const organizerName = getCookie("name"); // 从cookie获取组织者姓名
+  const organizerName = getCookie("name"); // Get organizer's name from cookie
 
   if (meetingsToDisplay.length === 0) {
     meetingList.innerHTML = "<p>No meetings found.</p>";
     return;
   }
 
-  // 生成会议列表
-  meetingsToDisplay.forEach(meeting => {
+  // Generate the meeting list
+  meetingsToDisplay.forEach(meetingRoleMap => {
+    const meeting = meetingRoleMap.meeting; // Extract meeting object
+    const role = meetingRoleMap.role; // Extract role
+
     const meetingDiv = document.createElement("div");
     meetingDiv.className = "meeting-item";
     console.log(meeting);
     console.log(meeting.organizer);
 
-    // 基本会议信息
+    // Basic meeting information
     meetingDiv.innerHTML = `
       <p><strong>Organizer:</strong> ${organizerName || "N/A"}</p>
       <p><strong>Type:</strong> ${capitalizeFirstLetter(meeting.type) || "N/A"}</p>
@@ -69,13 +72,14 @@ function displayMeetings(meetingsToDisplay) {
       <p><strong>End Time:</strong> ${meeting.endTime || "N/A"}</p>
       <p><strong>Recurrence:</strong> ${capitalizeFirstLetter(meeting.recurrence) || "N/A"}</p>
       <p><strong>Status:</strong> ${meeting.status || "N/A"}</p>
+      <p><strong>Role:</strong> ${role || "N/A"}</p> <!-- Display the role here -->
     `;
 
-    // 参与者信息
-    if (meeting.participants && meeting.participants.length > 0) {
+    // Participant information (if available)
+    if (role !== "participant" && meeting.participants && meeting.participants.length > 0) {
       let participantsHTML = '<p><strong>Participants:</strong></p><ul>';
       meeting.participants.forEach(participant => {
-        // 确保 participant.user 存在
+        // Ensure participant.user exists
         if (participant.user) {
           participantsHTML += `<li>Name: ${participant.user.name || "N/A"}, Email: ${participant.user.email || "N/A"}</li>`;
         } else {
@@ -84,29 +88,33 @@ function displayMeetings(meetingsToDisplay) {
       });
       participantsHTML += '</ul>';
       meetingDiv.innerHTML += participantsHTML;
+    } else if (role === "participant") {
+      meetingDiv.innerHTML += `<p><strong>Participants:</strong> As a participants, you are not allowed to see other participants' information.</p>`;
     } else {
       meetingDiv.innerHTML += `<p><strong>Participants:</strong> No participants found.</p>`;
     }
 
-    // 删除按钮
-    meetingDiv.innerHTML += `
-      <button class="delete-button" data-mid="${meeting.mid}">Delete</button>
-    `;
+    // Delete button
+    if (role !== "participant") {
+      meetingDiv.innerHTML += `
+        <button class="delete-button" data-mid="${meeting.mid}">Delete</button>
+      `;
+    }
 
     meetingList.appendChild(meetingDiv);
   });
 
-  // 绑定删除按钮的事件监听器
+  // Attach delete button listeners
   attachDeleteButtonListeners();
 }
 
-// 首字母大写
+// Capitalize the first letter of a string
 function capitalizeFirstLetter(string) {
   if (!string) return "";
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-// 应用过滤器
+// Apply filters to the meetings
 function applyFilters() {
   const type = document.getElementById("typeFilter").value;
   const status = document.getElementById("statusFilter").value;
@@ -129,19 +137,19 @@ function applyFilters() {
   displayMeetings(filteredMeetings);
 }
 
-// 重置过滤器
+// Reset filters to default
 function resetFilters() {
   document.getElementById("filterForm").reset();
   displayMeetings(meetings);
 }
 
-// 绑定过滤按钮的事件监听器
+// Attach filter button event listeners
 function attachFilterListeners() {
   document.getElementById("applyFilters").addEventListener("click", applyFilters);
   document.getElementById("resetFilters").addEventListener("click", resetFilters);
 }
 
-// 绑定删除按钮的事件监听器
+// Attach delete button event listeners
 function attachDeleteButtonListeners() {
   const deleteButtons = document.querySelectorAll(".delete-button");
   deleteButtons.forEach(button => {
@@ -152,10 +160,10 @@ function attachDeleteButtonListeners() {
   });
 }
 
-// 删除会议的函数
+// Delete a meeting
 function deleteMeeting(meetingId) {
   if (!confirm("Are you sure you want to delete this meeting?")) {
-    return; // 用户取消删除
+    return; // User canceled delete
   }
 
   console.log(`Deleting meeting with ID: ${meetingId}`);
@@ -166,15 +174,15 @@ function deleteMeeting(meetingId) {
       return;
     }
 
-    if (xhr.status === 204) { // No Content, 成功删除
+    if (xhr.status === 204) { // No Content, success
       alert("Meeting deleted successfully.");
-      // 从会议数组中移除已删除的会议
+      // Remove the deleted meeting from the list
       meetings = meetings.filter(meeting => meeting.mid !== parseInt(meetingId));
-      // 刷新会议列表
+      // Refresh the meeting list
       displayMeetings(meetings);
     } else if (xhr.status === 401) {
       alert("Unauthorized: Please log in again.");
-      window.location.href = "/login_form"; // 重定向到登录页面
+      window.location.href = "/login_form"; // Redirect to login page
     } else if (xhr.status === 403) {
       alert("Forbidden: You are not authorized to delete this meeting.");
     } else if (xhr.status === 404) {
@@ -185,11 +193,11 @@ function deleteMeeting(meetingId) {
     }
   };
 
-  xhr.open("DELETE", `/delete_meeting?mid=${meetingId}`, true); // 调用应用的后端端点
+  xhr.open("DELETE", `/delete_meeting?mid=${meetingId}`, true); // Call the backend endpoint
   xhr.send();
 }
 
-// 页面加载完成后绑定事件和获取会议
+// On page load, bind events and fetch meetings
 document.addEventListener("DOMContentLoaded", () => {
   fetchMyMeetings();
   attachFilterListeners();
