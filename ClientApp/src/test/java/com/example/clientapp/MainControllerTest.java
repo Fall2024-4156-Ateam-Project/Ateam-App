@@ -7,6 +7,7 @@ import com.example.clientapp.util.CommonTypes.Day;
 import com.example.clientapp.util.CommonTypes.Availability;
 import com.example.clientapp.util.Triple;
 import com.example.clientapp.util.MeetingResponse;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import com.google.gson.Gson;
@@ -66,6 +67,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.ui.Model;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.util.AssertionErrors.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -836,5 +838,79 @@ public class MainControllerTest {
   }
 
 
+  @Test
+  void testMeetingCreateFormUnauthorizedAccess() throws Exception {
+    // Arrange
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    when(util.getCookie("role", request)).thenReturn("patient"); // Non-doctor role
+
+    // Act
+    String result = mainController.showCreateMeetingForm(request, model);
+
+    // Assert
+    assertEquals("error", result);
+    verify(model).addAttribute("error", "Unauthorized access.");
+  }
+
+  @Test
+  void testDeleteMeetingUnauthorized() {
+    // Arrange
+    String email = "unauthorized@example.com";
+    int meetingId = 1;
+
+    when(util.getCookie("email", request)).thenReturn(email);
+    when(meetingService.deleteMeeting(meetingId))
+            .thenReturn(new MeetingResponse("Unauthorized: Email not found.", false));
+
+    // Act
+    ResponseEntity<MeetingResponse> response = mainController.deleteMeeting(meetingId, request);
+
+    // Assert
+    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    assertEquals("Unauthorized: Email not found.", response.getBody().getMessage());
+  }
+
+  @Test
+  void testViewMyMeetingsSuccess() throws Exception {
+    // Arrange
+    String email = "doctor@example.com";
+    when(util.getCookie("email", request)).thenReturn(email);
+    List<Map<String, Object>> mockMeetings = List.of(
+            Map.of("meetingId", 1, "participantEmail", "patient@example.com"),
+            Map.of("meetingId", 2, "participantEmail", "otherpatient@example.com")
+    );
+    when(meetingService.getMyMeetings(email)).thenReturn(CompletableFuture.completedFuture(mockMeetings));
+
+    // Act
+    CompletableFuture<List<Map<String, Object>>> response = mainController.viewMyMeetings(request, model);
+
+    // Assert
+    assertEquals(2, response.join().size());
+    assertEquals(mockMeetings, response.join());
+    verify(meetingService).getMyMeetings(email);
+  }
+
+  @Test
+  void testViewMyMeetingsUnauthorized() throws Exception {
+    // Arrange
+    when(util.getCookie("email", request)).thenReturn(null); // No email in the cookie
+
+    // Act
+    CompletableFuture<List<Map<String, Object>>> response = mainController.viewMyMeetings(request, model);
+  }
+
+  @Test
+  void testUpdateRequestValidationFailure() throws Exception {
+    // Arrange
+    when(util.getCookie("email", request)).thenReturn(null); // No email cookie
+    Map<String, Object> fieldsToUpdate = Map.of("invalidField", "Invalid Value");
+
+    // Act
+    CompletableFuture<String> result = mainController.updateUserRequest(request, response, fieldsToUpdate);
+
+    // Assert
+    assertEquals("Email is required and must be present in the cookies.", result.join());
+    verify(authService, never()).updateUserByEmail(anyString(), anyMap()); // Ensure no service call
+  }
 
 }

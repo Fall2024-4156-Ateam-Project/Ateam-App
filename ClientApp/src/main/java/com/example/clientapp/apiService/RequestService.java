@@ -53,7 +53,7 @@ public class RequestService {
    * @return
    */
 
-  private HttpEntity<Map<String, String>> generateRequest(Map<String, String> requestBody) {
+  public HttpEntity<Map<String, String>> generateRequest(Map<String, String> requestBody) {
     headers.add("apiKey", apiKey);
     HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
     return request;
@@ -183,7 +183,7 @@ public class RequestService {
     );
   }
 
-  private HttpEntity<Map<String, Object>> generateRequestobject(Map<String, Object> requestBody) {
+  public HttpEntity<Map<String, Object>> generateRequestobject(Map<String, Object> requestBody) {
     headers.add("apiKey", apiKey);
     HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
     return request;
@@ -195,7 +195,7 @@ public class RequestService {
     return new HttpEntity<>(headers);
   }
 
-  private Map<String, Object> findUserByEmail(String email) {
+  public Map<String, Object> findUserByEmail(String email) {
     String url = apiConfig.baseApi + apiConfig.USER_FIND_BY_EMAIL + "?email=" + email;
     System.out.println("Request URL: " + url);
 
