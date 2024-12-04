@@ -47,6 +47,18 @@ Running the application: ```mvn spring-boot:run```
 8. When the user is logged in and on the personal home page, click on the "My requests" button and they will be directed to the requests list page containing all requests they have created and the related information. For each request, the user can update the description of the request or delete it.
 ### Meeting
 1. If the user role is a doctor, on the home page there is a "Create Meeting" button. Clicking on that button, the user will be directed to a page asking the detailed information of the new meeting, including description, recurrence (daily, weekly, monthly, or none), type (group or one-on-one), participant email, start day, start time, end day, end time, and status (valid, invalid). If any field is missing, the user will be asked to enter that field. If the participant email is not found in the database, the user will be notified "Participant does not exist". If the meeting is created succesfully, then the user will be directed to a page showing meetings associated with this user.
-2. No matter the user is a doctor or patient, on the home page there is a "My Meetings" button. Clicking on that button, the user will see the list of meetings associated with the user. Each meeting contains information of the organizer, type, description, start day, end day, start time, end time, recurrence, status, and participants (names and emails).
+2. No matter the user is a doctor or patient, on the home page there is a "My Meetings" button. Clicking on that button, the user will see the list of meetings associated with the user. Each meeting contains information of the organizer, type, description, start day, end day, start time, end time, recurrence, status, role, and participants (names and emails). However, for different role, either participant or organizer, the content of participant will be presented distinctly. As organizer, doctor is able to view the name and email of patients. As participants, they will be patients or doctors, are not allowed to view that information due to the privacy and security concern. They are only able to see "As a participants, you are not allowed to see other participants' information."
 3. When viewing meetings, the user can use at most 3 filters: type, status, or recurrence. After clicking on the "Apply Filters" button, they will only see the filterd meetings. They can cancel the filter and view all meetings again by clicking on the "Reset Filters" button.
-4. If the user is a doctor, they can delete a meeting using the "Delete" button, and they will be notified "Meeting deleted successfully."
+4. Under the view meeting page, if the user is a organizer, the doctor can delete a meeting using the "Delete" button, and they will be notified "Meeting deleted successfully." However, as participants, either patients or doctors, they are prohibited to make any change to that meetings they are attending.
+
+
+## Tools used
+This section includes notes on tools and technologies used in building this project, as well as any additional details if applicable.
+
+1. Firebase DB
+2. Maven Package Manager
+3. GitHub Actions CI
+4. Checkstyle
+5. JUnit
+6. JaCoCo
+7. Postman
