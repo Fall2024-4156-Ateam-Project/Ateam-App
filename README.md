@@ -62,4 +62,3 @@ This section includes notes on tools and technologies used in building this proj
 5. JUnit
 6. JaCoCo
 7. Postman
-8. 
