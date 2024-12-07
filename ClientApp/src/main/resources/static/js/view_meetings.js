@@ -72,7 +72,7 @@ function displayMeetings(meetingsToDisplay) {
       <p><strong>End Time:</strong> ${meeting.endTime || "N/A"}</p>
       <p><strong>Recurrence:</strong> ${capitalizeFirstLetter(meeting.recurrence) || "N/A"}</p>
       <p><strong>Status:</strong> ${meeting.status || "N/A"}</p>
-      <p><strong>Role:</strong> ${role || "N/A"}</p> <!-- Display the role here -->
+      <p><strong>Role:</strong> ${role || "N/A"}</p>
     `;
 
     // Participant information (if available)
@@ -89,7 +89,7 @@ function displayMeetings(meetingsToDisplay) {
       participantsHTML += '</ul>';
       meetingDiv.innerHTML += participantsHTML;
     } else if (role === "participant") {
-      meetingDiv.innerHTML += `<p><strong>Participants:</strong> As a participants, you are not allowed to see other participants' information.</p>`;
+      meetingDiv.innerHTML += `<p><strong>Participants:</strong> As a participant, you are not allowed to see other participants' information.</p>`;
     } else {
       meetingDiv.innerHTML += `<p><strong>Participants:</strong> No participants found.</p>`;
     }
@@ -123,15 +123,15 @@ function applyFilters() {
   let filteredMeetings = meetings;
 
   if (type) {
-    filteredMeetings = filteredMeetings.filter(meeting => meeting.type === type);
+    filteredMeetings = filteredMeetings.filter(m => m.meeting.type === type);
   }
 
   if (status) {
-    filteredMeetings = filteredMeetings.filter(meeting => meeting.status === status);
+    filteredMeetings = filteredMeetings.filter(m => m.meeting.status === status);
   }
 
   if (recurrence) {
-    filteredMeetings = filteredMeetings.filter(meeting => meeting.recurrence === recurrence);
+    filteredMeetings = filteredMeetings.filter(m => m.meeting.recurrence === recurrence);
   }
 
   displayMeetings(filteredMeetings);
@@ -177,7 +177,7 @@ function deleteMeeting(meetingId) {
     if (xhr.status === 204) { // No Content, success
       alert("Meeting deleted successfully.");
       // Remove the deleted meeting from the list
-      meetings = meetings.filter(meeting => meeting.mid !== parseInt(meetingId));
+      meetings = meetings.filter(m => m.meeting.mid !== parseInt(meetingId));
       // Refresh the meeting list
       displayMeetings(meetings);
     } else if (xhr.status === 401) {
